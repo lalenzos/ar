@@ -1,0 +1,53 @@
+{
+	"name": "virtual-document",
+	"displayName": "virtual-document",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.59.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:virtual-document.showAdverb"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "virtual-document.showAdverb",
+				"title": "Show Adverb"
+			}
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "virtual-document.showAdverb",
+					"group": "navigation"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "virtual-document.showAdverb"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.59.0",
+		"@types/node": "14.x",
+		"eslint": "^7.27.0",
+		"@typescript-eslint/eslint-plugin": "^4.26.0",
+		"@typescript-eslint/parser": "^4.26.0",
+		"typescript": "^4.3.2"
+	}
+}
