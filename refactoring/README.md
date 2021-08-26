@@ -1,4 +1,4 @@
-# astevents README
+# refactoring README
 
 This demo extension appends to each variable name the prefix "ADVERB_" when opening a `*.js` file. The transformation or reset is carried out on subsequent events:
 
