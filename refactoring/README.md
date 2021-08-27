@@ -1,6 +1,6 @@
 # refactoring README
 
-This demo extension appends to each variable name the prefix "ADVERB_" when opening a `*.js` file. The transformation or reset is carried out on subsequent events:
+This demo extension appends to each variable name that includes the letter "m" the prefix "ADVERB_" when opening a `*.js` file. The variable name searches are done using the "find symbol" api of vscode, whereas the modifications are done using the "rename symbol" api of vscode. The transformation or reset is carried out on subsequent events:
 
 - `vscode.workspace.onDidOpenTextDocument` (appending...)
 - `vscode.workspace.onDidSaveTextDocument` (appending...)
