@@ -13,8 +13,8 @@ export class Annotations {
             renderOptions: {
                 before: {
                     contentText: message,
-                    color: new ThemeColor("inlineparameters.annotationForeground"),
-                    backgroundColor: new ThemeColor("inlineparameters.annotationBackground"),
+                    color: new ThemeColor("decoratorrenaming.annotationForeground"),
+                    backgroundColor: new ThemeColor("decoratorrenaming.annotationBackground"),
                     fontStyle: workspace.getConfiguration("decorator-renaming").get("fontStyle"),
                     fontWeight: workspace.getConfiguration("decorator-renaming").get("fontWeight"),
                     textDecoration: disableStyling ? "" : `;

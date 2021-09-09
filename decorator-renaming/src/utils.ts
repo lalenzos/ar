@@ -16,7 +16,7 @@ export interface IdentifierToRename {
 export interface LanguageDriver {
     getParameterName(editor: vscode.TextEditor, position: vscode.Position, key: number, namedValue?: string): any;
     parse(code: string): ParameterPosition[];
-    getIdentifiersToRename(code: string): IdentifierToRename[];
+    getIdentifiersToRename(activeEditor: vscode.TextEditor, code: string): Promise<IdentifierToRename[]>;
 }
 
 export function removeShebang(sourceCode: string): string {

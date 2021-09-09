@@ -119,6 +119,10 @@ function getNodes(astNode, nodeArr) {
             if (item === undefined || item === null)
                 continue;
 
+            if (Array.isArray(item.arguments))
+                nodeArr.push(...item.arguments); //ex: console.log(a, b, c, d, e) -> to get the single arguments
+            if (Array.isArray(item.params))
+                nodeArr.push(...item.params); //ex: function test(a, b, c, d, e) -> to get the single params
             if (Array.isArray(item))
                 // If the current node is an array of nodes, loop through each
                 item.forEach((subItem) => nodeArr = getNodes(subItem, nodeArr));
@@ -182,7 +186,7 @@ function getExpressionLoc(call: any) {
     };
 };
 
-export function getIdentifiersToRename(code: string, options: any): IdentifierToRename[] {
+export async function getIdentifiersToRename(activeEditor: vscode.TextEditor, code: string, options: any): Promise<IdentifierToRename[]> {
     code = removeShebang(code);
     let javascriptAst: any = "";
 
@@ -195,13 +199,17 @@ export function getIdentifiersToRename(code: string, options: any): IdentifierTo
     let arr = getNodes(javascriptAst, []);
     const nodes = arr.filter((node) => node.type === "Identifier");
 
+    // const activeEditorSymbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', activeEditor.document.uri);
+
     const identifiers: IdentifierToRename[] = [];
     for (const node of nodes) {
+        const name = node.name;
+        const loc = node.loc;
         const range: vscode.Range = new vscode.Range(
-            new vscode.Position(node.loc.start.line - 1, node.loc.start.column),
-            new vscode.Position(node.loc.end.line - 1, node.loc.end.column),
+            new vscode.Position(loc.start.line - 1, loc.start.column),
+            new vscode.Position(loc.end.line - 1, loc.end.column),
         );
-        const identifier: IdentifierToRename = { range: range, content: node.name };
+        const identifier: IdentifierToRename = { range: range, content: name };
         identifiers.push(identifier);
     }
 

@@ -81,12 +81,12 @@ async function updateDecorations(activeEditor: vscode.TextEditor, languageDriver
     }
     activeEditor.setDecorations(hintDecorationType, languageFunctions);
 
-    const identifiers = driver.getIdentifiersToRename(code);
+    const identifiers = await driver.getIdentifiersToRename(activeEditor, code);
     activeEditor.setDecorations(hideIdentifierDecorationType, identifiers);
 
     const decoratedIdentifiers = identifiers.map(i => {
         return Annotations.parameterAnnotation(`_${i.content}_`, i.range, true);
-    })
+    });
     activeEditor.setDecorations(hintIdentifierType, decoratedIdentifiers);
 }
 

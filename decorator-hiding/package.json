@@ -28,12 +28,12 @@
     "commands": [
       {
         "command": "decorator-hiding.toggle",
-        "title": "Inline Parameters: Hide / Show"
+        "title": "Decorator hiding: Hide / Show"
       }
     ],
     "configuration": [
       {
-        "title": "Inline Parameters",
+        "title": "Decorator hiding",
         "properties": {
           "decorator-hiding.enabled": {
             "type": "boolean",
@@ -130,7 +130,7 @@
     ],
     "colors": [
       {
-        "id": "inlineparameters.annotationForeground",
+        "id": "decoratorhiding.annotationForeground",
         "description": "Specifies the foreground color for the annotations",
         "defaults": {
           "dark": "#adbec5",
@@ -139,7 +139,7 @@
         }
       },
       {
-        "id": "inlineparameters.annotationBackground",
+        "id": "decoratorhiding.annotationBackground",
         "description": "Specifies the background color for the annotations",
         "defaults": {
           "dark": "#1e2c31",

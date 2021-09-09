@@ -16,8 +16,8 @@ export class Annotations {
             renderOptions: {
                 before: {
                     contentText: message,
-                    color: new ThemeColor("inlineparameters.annotationForeground"),
-                    backgroundColor: new ThemeColor("inlineparameters.annotationBackground"),
+                    color: new ThemeColor("decoratorhiding.annotationForeground"),
+                    backgroundColor: new ThemeColor("decoratorhiding.annotationBackground"),
                     fontStyle: workspace.getConfiguration("decorator-hiding").get("fontStyle"),
                     fontWeight: workspace.getConfiguration("decorator-hiding").get("fontWeight"),
                     textDecoration: `;
