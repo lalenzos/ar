@@ -1,0 +1,180 @@
+{
+  "name": "decorator-renaming",
+  "displayName": "Inline Parameters for VSCode",
+  "description": "Function parameter annotations displaying inline in VSCode",
+  "publisher": "liamhammett",
+  "icon": "icon.png",
+  "version": "0.2.1",
+  "license": "MIT",
+  "homepage": "https://github.com/imliam/vscode-decorator-renaming",
+  "bugs": {
+    "url": "https://github.com/imliam/vscode-decorator-renaming/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imliam/vscode-decorator-renaming"
+  },
+  "main": "./out/extension.js",
+  "engines": {
+    "vscode": "^1.40.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "decorator-renaming.toggle",
+        "title": "Inline Parameters: Hide / Show"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Inline Parameters",
+        "properties": {
+          "decorator-renaming.enabled": {
+            "type": "boolean",
+            "description": "Show inline parameters",
+            "default": true
+          },
+          "decorator-renaming.leadingCharacters": {
+            "type": "string",
+            "description": "Characters to be shown before each parameter annotation",
+            "default": ""
+          },
+          "decorator-renaming.trailingCharacters": {
+            "type": "string",
+            "description": "Characters to be shown after each parameter annotation",
+            "default": ":"
+          },
+          "decorator-renaming.hideSingleParameters": {
+            "type": "boolean",
+            "description": "Hide inline parameters if a function only has 1 parameter",
+            "default": false
+          },
+          "decorator-renaming.parameterCase": {
+            "type": "string",
+            "description": "Forcibly change the case of the inline parameter name",
+            "enum": [
+              "normal",
+              "lowercase",
+              "uppercase"
+            ],
+            "default": "normal"
+          },
+          "decorator-renaming.showVariadicNumbers": {
+            "type": "boolean",
+            "description": "Show the number of times a variadic parameter has been called",
+            "default": true
+          },
+          "decorator-renaming.hideRedundantAnnotations": {
+            "type": "boolean",
+            "description": "If the value given to a parameter is the same as the parameter name, hide it",
+            "default": true
+          },
+          "decorator-renaming.fontWeight": {
+            "type": "string",
+            "default": "400",
+            "enum": [
+              "100",
+              "200",
+              "300",
+              "400",
+              "500",
+              "600",
+              "700",
+              "800",
+              "900"
+            ],
+            "description": "Annotation styling of font-weight CSS property"
+          },
+          "decorator-renaming.fontStyle": {
+            "type": "string",
+            "default": "italic",
+            "enum": [
+              "normal",
+              "italic"
+            ],
+            "description": "Annotation styling of font-style CSS property"
+          },
+          "decorator-renaming.fontSize": {
+            "type": "string",
+            "default": "0.85em",
+            "description": "Annotation styling of font size CSS property"
+          },
+          "decorator-renaming.margin": {
+            "type": "string",
+            "default": "0.25em",
+            "description": "Annotation styling of margin CSS property"
+          },
+          "decorator-renaming.padding": {
+            "type": "string",
+            "default": "0.25em 0.5em",
+            "description": "Annotation styling of padding CSS property"
+          },
+          "decorator-renaming.borderRadius": {
+            "type": "string",
+            "default": "0.25em",
+            "description": "Annotation styling of border-radius CSS property"
+          },
+          "decorator-renaming.border": {
+            "type": "string",
+            "default": "none",
+            "description": "Annotation styling of border CSS property"
+          }
+        }
+      }
+    ],
+    "colors": [
+      {
+        "id": "inlineparameters.annotationForeground",
+        "description": "Specifies the foreground color for the annotations",
+        "defaults": {
+          "dark": "#adbec5",
+          "light": "#797a79",
+          "highContrast": "#adbec5"
+        }
+      },
+      {
+        "id": "inlineparameters.annotationBackground",
+        "description": "Specifies the background color for the annotations",
+        "defaults": {
+          "dark": "#1e2c31",
+          "light": "#f4f5f4",
+          "highContrast": "#1e2c31"
+        }
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "decorator-renaming.toggle",
+        "key": "ctrl+k a",
+        "mac": "cmd+k a"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.2",
+    "@types/mocha": "^5.0.0",
+    "@types/node": "^12.12.44",
+    "@types/vscode": "^1.40.0",
+    "glob": "^7.1.5",
+    "mocha": "^6.2.2",
+    "typescript": "^3.9.5",
+    "vscode-test": "^1.2.2"
+  },
+  "dependencies": {
+    "babylon": "^7.0.0-beta.47",
+    "install": "^0.13.0",
+    "npm": "^6.14.5",
+    "recast": "^0.16.0"
+  }
+}
