@@ -29,6 +29,10 @@
       {
         "command": "decorator-renaming.toggle",
         "title": "Decorator renaming: Hide / Show"
+      },
+      {
+        "command": "decorator-renaming.dynamic",
+        "title": "Decorator renaming: Dynamic"
       }
     ],
     "configuration": [

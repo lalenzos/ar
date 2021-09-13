@@ -15,7 +15,7 @@ const hideIdentifierDecorationType = vscode.window.createTextEditorDecorationTyp
 });
 const hintIdentifierType = vscode.window.createTextEditorDecorationType({});
 
-async function updateDecorations(activeEditor: vscode.TextEditor, languageDrivers: Record<string, LanguageDriver>) {
+async function updateDecorations(activeEditor: vscode.TextEditor, languageDrivers: Record<string, LanguageDriver>, dynamic: boolean = false) {
     if (!activeEditor)
         return;
 
@@ -85,7 +85,8 @@ async function updateDecorations(activeEditor: vscode.TextEditor, languageDriver
     activeEditor.setDecorations(hideIdentifierDecorationType, identifiers);
 
     const decoratedIdentifiers = identifiers.map(i => {
-        return Annotations.parameterAnnotation(`_${i.content}_`, i.range, true);
+        // return Annotations.parameterAnnotation(`_THIS-IS-A-TEST-HOWEVER-THIS-STRING-SHOULD-BE-EXTREMELY-LONG-FOR-TEST-PURPOSES-THEREFORE-I-AM-ADDING-MORE-TEXT-TO-GET-AN-EVEN-LONGER-TEXT_${i.content}_`, i.range, true);
+        return Annotations.parameterAnnotation(`${dynamic ? "D" : ""}_${i.content}_${dynamic ? "D" : ""}`, i.range, true)
     });
     activeEditor.setDecorations(hintIdentifierType, decoratedIdentifiers);
 }
@@ -102,6 +103,10 @@ export function activate(context: vscode.ExtensionContext) {
     let activeEditor: vscode.TextEditor = vscode.window.activeTextEditor;
 
     Commands.registerCommands();
+
+    vscode.commands.registerCommand('decorator-renaming.dynamic', () => {
+        updateDecorations(activeEditor, languageDrivers, true);
+    })
 
     function triggerUpdateDecorations(timer: boolean = true) {
         if (timeout) {

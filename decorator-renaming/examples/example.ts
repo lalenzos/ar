@@ -1,7 +1,7 @@
 var testVariable: string = "Hallo"; // "var" and ": string" is hidden
 testVariable = "";
 
-const anotherVariable: string = "Ciao";
+const anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2: string = "Ciao";
 
 function test123(a, b, ...c): void { //": void" is hidden
     console.log(a,b, ...c);
@@ -15,4 +15,4 @@ test123('Foo', 'bar', 1, 2, 3, 4) //inline hints (parameters)
 
 console.log('a', 'b', 'c', 'd', 'e')
 
-console.log(anotherVariable)
+console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2)
