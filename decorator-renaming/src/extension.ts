@@ -5,7 +5,7 @@ import * as typescriptDriver from "./drivers/typescript"
 import * as typescriptReactDriver from "./drivers/typescriptreact"
 import { Annotations } from "./annotationProvider"
 import Commands from "./commands"
-import { LanguageDriver, ParameterPosition } from "./utils"
+import { IdentifierToRename, LanguageDriver, ParameterPosition } from "./utils"
 
 const hintDecorationType = vscode.window.createTextEditorDecorationType({});
 const hideIdentifierDecorationType = vscode.window.createTextEditorDecorationType({
@@ -16,79 +16,111 @@ const hideIdentifierDecorationType = vscode.window.createTextEditorDecorationTyp
 const hintIdentifierType = vscode.window.createTextEditorDecorationType({});
 
 async function updateDecorations(activeEditor: vscode.TextEditor, languageDrivers: Record<string, LanguageDriver>, dynamic: boolean = false) {
-    if (!activeEditor)
-        return;
+    vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        cancellable: false,
+        title: 'Decorator renaming...'
+    }, async (progress) => {
+        return new Promise(async (resolve) => {
+            progress.report({ increment: 0 });
 
-    if (!(activeEditor.document.languageId in languageDrivers))
-        return;
+            if (!activeEditor) {
+                resolve(undefined);
+                return;
+            }
 
-    const driver: LanguageDriver = languageDrivers[activeEditor.document.languageId];
-    const isEnabled = vscode.workspace.getConfiguration("decorator-renaming").get("enabled");
+            if (!(activeEditor.document.languageId in languageDrivers)) {
+                resolve(undefined);
+                return;
+            }
 
-    if (!isEnabled) {
-        activeEditor.setDecorations(hintDecorationType, []);
-        return;
-    }
+            const driver: LanguageDriver = languageDrivers[activeEditor.document.languageId];
+            const isEnabled = vscode.workspace.getConfiguration("decorator-renaming").get("enabled");
 
-    const code = activeEditor.document.getText();
-    let languageParameters: ParameterPosition[] = [];
+            if (!isEnabled) {
+                activeEditor.setDecorations(hintDecorationType, []);
+                resolve(undefined);
+                return;
+            }
 
-    try {
-        languageParameters = driver.parse(code);
-    } catch (err) {
-        // Error parsing language"s AST, likely a syntax error on the user"s side
-    }
+            const code = activeEditor.document.getText();
+            let languageParameters: ParameterPosition[] = [];
 
-    if (languageParameters.length === 0)
-        return;
+            try {
+                languageParameters = driver.parse(code);
+            } catch (err) {
+                console.log(err);
+                // Error parsing language"s AST, likely a syntax error on the user"s side
+            }
 
-    const languageFunctions: vscode.DecorationOptions[] = [];
+            if (languageParameters.length === 0){
+                resolve(undefined);
+                return;
+            }
 
-    for (let index = 0; index < languageParameters.length; index++) {
-        var parameter = languageParameters[index];
+            const languageFunctions: vscode.DecorationOptions[] = [];
 
-        const start = new vscode.Position(parameter.start.line, parameter.start.character);
-        const end = new vscode.Position(parameter.end.line, parameter.end.character);
+            for (let index = 0; index < languageParameters.length; index++) {
+                var parameter = languageParameters[index];
 
-        let parameterName: any;
+                const start = new vscode.Position(parameter.start.line, parameter.start.character);
+                const end = new vscode.Position(parameter.end.line, parameter.end.character);
 
-        try {
-            parameterName = await driver.getParameterName(
-                activeEditor,
-                new vscode.Position(parameter.expression.line, parameter.expression.character),
-                parameter.key,
-                parameter.namedValue
-            );
-        } catch (err) {
-            // Error getting a parameter name, just ignore it
-        }
+                let parameterName: any;
 
-        if (!parameterName)
-            continue;
+                try {
+                    parameterName = await driver.getParameterName(
+                        activeEditor,
+                        new vscode.Position(parameter.expression.line, parameter.expression.character),
+                        parameter.key,
+                        parameter.namedValue
+                    );
+                } catch (err) {
+                    // Error getting a parameter name, just ignore it
+                }
 
-        const leadingCharacters = vscode.workspace.getConfiguration("decorator-renaming").get("leadingCharacters");
-        const trailingCharacters = vscode.workspace.getConfiguration("decorator-renaming").get("trailingCharacters");
-        const parameterCase = vscode.workspace.getConfiguration("decorator-renaming").get("parameterCase");
+                if (!parameterName)
+                    continue;
 
-        if (parameterCase === "uppercase")
-            parameterName = parameterName.toUpperCase();
+                const leadingCharacters = vscode.workspace.getConfiguration("decorator-renaming").get("leadingCharacters");
+                const trailingCharacters = vscode.workspace.getConfiguration("decorator-renaming").get("trailingCharacters");
+                const parameterCase = vscode.workspace.getConfiguration("decorator-renaming").get("parameterCase");
 
-        if (parameterCase === "lowercase")
-            parameterName = parameterName.toLowerCase();
+                if (parameterCase === "uppercase")
+                    parameterName = parameterName.toUpperCase();
 
-        const annotation = Annotations.parameterAnnotation(leadingCharacters + parameterName + trailingCharacters, new vscode.Range(start, end));
-        languageFunctions.push(annotation);
-    }
-    activeEditor.setDecorations(hintDecorationType, languageFunctions);
+                if (parameterCase === "lowercase")
+                    parameterName = parameterName.toLowerCase();
 
-    const identifiers = await driver.getIdentifiersToRename(activeEditor, code);
-    activeEditor.setDecorations(hideIdentifierDecorationType, identifiers);
+                const annotation = Annotations.parameterAnnotation(leadingCharacters + parameterName + trailingCharacters, new vscode.Range(start, end));
+                languageFunctions.push(annotation);
+            }
+            progress.report({ increment: 50 });
+            activeEditor.setDecorations(hintDecorationType, languageFunctions);
 
-    const decoratedIdentifiers = identifiers.map(i => {
-        // return Annotations.parameterAnnotation(`_THIS-IS-A-TEST-HOWEVER-THIS-STRING-SHOULD-BE-EXTREMELY-LONG-FOR-TEST-PURPOSES-THEREFORE-I-AM-ADDING-MORE-TEXT-TO-GET-AN-EVEN-LONGER-TEXT_${i.content}_`, i.range, true);
-        return Annotations.parameterAnnotation(`${dynamic ? "D" : ""}_${i.content}_${dynamic ? "D" : ""}`, i.range, true)
+            let identifiers: IdentifierToRename[] = [];
+            try {
+                identifiers = await driver.getIdentifiersToRename(activeEditor, code);
+            } catch (err) {
+                console.log(err);
+            }
+
+            if (identifiers.length === 0) {
+                resolve(undefined);
+                return;
+            }
+
+            activeEditor.setDecorations(hideIdentifierDecorationType, identifiers);
+
+            const decoratedIdentifiers = identifiers.map(i => {
+                // return Annotations.parameterAnnotation(`_THIS-IS-A-TEST-HOWEVER-THIS-STRING-SHOULD-BE-EXTREMELY-LONG-FOR-TEST-PURPOSES-THEREFORE-I-AM-ADDING-MORE-TEXT-TO-GET-AN-EVEN-LONGER-TEXT_${i.content}_`, i.range, true);
+                return Annotations.parameterAnnotation(`${dynamic ? "D" : ""}_${i.content}_${dynamic ? "D" : ""}`, i.range, true)
+            });
+            progress.report({ increment: 90 });
+            activeEditor.setDecorations(hintIdentifierType, decoratedIdentifiers);
+            resolve(undefined);
+        });
     });
-    activeEditor.setDecorations(hintIdentifierType, decoratedIdentifiers);
 }
 
 export function activate(context: vscode.ExtensionContext) {
