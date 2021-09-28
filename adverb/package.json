@@ -1,0 +1,123 @@
+{
+	"name": "adverb",
+	"displayName": "adverb",
+	"description": "Rename code symbols locally without changing the original source code. This makes it easier for you to read other people's source code and increases your productivity through the improved naming.",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.60.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:adverb.rename"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "adverb.rename",
+				"title": "Rename symbol (locally)",
+				"category": "Adverb",
+				"enablement": "editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.refreshRenaming",
+				"title": "Refresh",
+				"category": "Adverb",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				},
+				"enablement": "editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.editRenaming",
+				"title": "Edit",
+				"category": "Adverb",
+				"icon": {
+					"light": "resources/light/edit.svg",
+					"dark": "resources/dark/edit.svg"
+				}
+			},
+			{
+				"command": "adverb.deleteRenaming",
+				"title": "Delete",
+				"category": "Adverb"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "adverb.rename",
+					"when": "editorTextFocus",
+					"group": "Adverb"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "adverb.rename",
+					"group": "1_modification",
+					"when": "editorTextFocus"
+				}
+			],
+			"view/title": [
+				{
+					"command": "adverb.refreshRenaming",
+					"when": "view == adverb.renamings",
+					"group": "navigation"
+				},
+				{
+					"command": "adverb.rename",
+					"when": "view == adverb.renamings"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "adverb.editRenaming",
+					"when": "view == adverb.renamings && viewItem == dependency",
+					"group": "inline"
+				},
+				{
+					"command": "adverb.deleteRenaming",
+					"when": "view == adverb.renamings && viewItem == dependency"
+				}
+			]
+		},
+		"views": {
+			"explorer": [
+				{
+					"id": "adverb.renamings",
+					"name": "Adverb: Original symbol name <-> New symbol name"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "adverb.renamings",
+				"contents": "No renamings found.\n[Add a renaming](command:adverb.rename)"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"lint": "eslint src --ext ts"
+	},
+	"devDependencies": {
+		"@types/babel__generator": "^7.6.3",
+		"@types/babel__traverse": "^7.14.2",
+		"@types/node": "14.x",
+		"@types/vscode": "^1.60.0",
+		"@typescript-eslint/eslint-plugin": "^4.26.0",
+		"@typescript-eslint/parser": "^4.26.0",
+		"eslint": "^7.27.0",
+		"typescript": "^4.3.2"
+	},
+	"dependencies": {
+		"@babel/parser": "^7.15.7",
+		"@babel/traverse": "^7.15.4",
+		"@babel/types": "^7.15.6"
+	}
+}
