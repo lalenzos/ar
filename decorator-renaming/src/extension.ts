@@ -15,7 +15,7 @@ const hideIdentifierDecorationType = vscode.window.createTextEditorDecorationTyp
 });
 const hintIdentifierType = vscode.window.createTextEditorDecorationType({});
 
-async function updateDecorations(activeEditor: vscode.TextEditor, languageDrivers: Record<string, LanguageDriver>, dynamic: boolean = false) {
+async function updateDecorations(activeEditor: vscode.TextEditor, languageDrivers: Record<string, LanguageDriver>, dynamic: boolean = false, range: vscode.Range | undefined = undefined, text: string | undefined = undefined) {
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         cancellable: false,
@@ -53,7 +53,7 @@ async function updateDecorations(activeEditor: vscode.TextEditor, languageDriver
                 // Error parsing language"s AST, likely a syntax error on the user"s side
             }
 
-            if (languageParameters.length === 0){
+            if (languageParameters.length === 0) {
                 resolve(undefined);
                 return;
             }
@@ -110,6 +110,15 @@ async function updateDecorations(activeEditor: vscode.TextEditor, languageDriver
                 return;
             }
 
+            const compareRange = (range1?: vscode.Range, range2?: vscode.Range) => {
+                if (range1 && range2)
+                    return range1.start.line === range2.start.line && range1.end.line === range2.end.line;
+                return false;
+            }
+
+            //filter current line that is being edited
+            identifiers = identifiers.filter(x => !compareRange(x.range, range) || text === "\r\n");
+
             activeEditor.setDecorations(hideIdentifierDecorationType, identifiers);
 
             const decoratedIdentifiers = identifiers.map(i => {
@@ -136,17 +145,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     Commands.registerCommands();
 
-    vscode.commands.registerCommand('decorator-renaming.dynamic', () => {
+    vscode.commands.registerCommand("decorator-renaming.dynamic", () => {
         updateDecorations(activeEditor, languageDrivers, true);
     })
 
-    function triggerUpdateDecorations(timer: boolean = true) {
+    function triggerUpdateDecorations(timer: boolean = true, range: vscode.Range | undefined = undefined, text: string | undefined = undefined) {
         if (timeout) {
             clearTimeout(timeout);
             timeout = undefined;
         }
 
-        timeout = setTimeout(() => updateDecorations(activeEditor, languageDrivers), timer ? 2500 : 25);
+        timeout = setTimeout(() => updateDecorations(activeEditor, languageDrivers, false, range, text), timer ? 2500 : 25);
     }
 
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -167,11 +176,21 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeTextDocument(
         (event) => {
             if (activeEditor && event.document === activeEditor.document)
-                triggerUpdateDecorations(false);
+                if (event.contentChanges.length === 1)
+                    triggerUpdateDecorations(false, event.contentChanges[0].range, event.contentChanges[0].text);
+                else
+                    triggerUpdateDecorations(false);
         },
         null,
         context.subscriptions
     );
+
+    vscode.window.onDidChangeTextEditorSelection(
+        (event) => {
+            // console.log(event); //TODO: what to do on selection...
+        }
+    );
+
 
     if (activeEditor)
         triggerUpdateDecorations();
