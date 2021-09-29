@@ -19,7 +19,7 @@
 				"command": "adverb.rename",
 				"title": "Rename symbol (locally)",
 				"category": "Adverb",
-				"enablement": "editorLangId == javascript || editorLangId == typescript"
+				"enablement": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
 				"command": "adverb.refreshRenaming",
@@ -28,8 +28,7 @@
 				"icon": {
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
-				},
-				"enablement": "editorLangId == javascript || editorLangId == typescript"
+				}
 			},
 			{
 				"command": "adverb.editRenaming",
@@ -43,22 +42,45 @@
 			{
 				"command": "adverb.deleteRenaming",
 				"title": "Delete",
-				"category": "Adverb"
+				"category": "Adverb",
+				"icon": {
+					"light": "resources/light/trash.svg",
+					"dark": "resources/dark/trash.svg"
+				}
+			}
+		],
+		"keybindings": [
+			{
+				"command": "adverb.rename",
+				"key": "shift+f2",
+				"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
 					"command": "adverb.rename",
-					"when": "editorTextFocus",
+					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
+				},
+				{
+					"command": "adverb.refreshRenaming",
+					"when": "false"
+				},
+				{
+					"command": "adverb.editRenaming",
+					"when": "false"
+				},
+				{
+					"command": "adverb.deleteRenaming",
+					"when": "false"
 				}
 			],
 			"editor/context": [
 				{
 					"command": "adverb.rename",
 					"group": "1_modification",
-					"when": "editorTextFocus"
+					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 				}
 			],
 			"view/title": [
@@ -66,10 +88,6 @@
 					"command": "adverb.refreshRenaming",
 					"when": "view == adverb.renamings",
 					"group": "navigation"
-				},
-				{
-					"command": "adverb.rename",
-					"when": "view == adverb.renamings"
 				}
 			],
 			"view/item/context": [
@@ -80,7 +98,8 @@
 				},
 				{
 					"command": "adverb.deleteRenaming",
-					"when": "view == adverb.renamings && viewItem == dependency"
+					"when": "view == adverb.renamings && viewItem == dependency",
+					"group": "inline"
 				}
 			]
 		},
@@ -88,14 +107,95 @@
 			"explorer": [
 				{
 					"id": "adverb.renamings",
-					"name": "Adverb: Original symbol name <-> New symbol name"
+					"name": "Adverb: Original symbol name <-> New symbol name",
+					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
 				}
 			]
 		},
 		"viewsWelcome": [
 			{
 				"view": "adverb.renamings",
-				"contents": "No renamings found.\n[Add a renaming](command:adverb.rename)"
+				"contents": "No renamings found."
+			}
+		],
+		"configuration": [
+			{
+				"title": "Adverb",
+				"properties": {
+					"adverb.enabled": {
+						"type": "boolean",
+						"description": "Adverb renaming enabled",
+						"default": true
+					},
+					"adverb.treeViewEnabled": {
+						"type": "boolean",
+						"description": "Adverb tree view (sidebar) enabled",
+						"default": true
+					},
+					"adverb.fontWeight": {
+						"type": "string",
+						"default": "inherit",
+						"enum": [
+							"inherit",
+							"100",
+							"200",
+							"300",
+							"400",
+							"500",
+							"600",
+							"700",
+							"800",
+							"900"
+						],
+						"description": "Font-weight CSS property of renaming"
+					},
+					"adverb.fontStyle": {
+						"type": "string",
+						"default": "inherit",
+						"enum": [
+							"normal",
+							"italic",
+							"inherit"
+						],
+						"description": "Font-style CSS property of renaming"
+					},
+					"adverb.fontSize": {
+						"type": "string",
+						"default": "inherit",
+						"description": "Font-size CSS property of renaming"
+					},
+					"adverb.margin": {
+						"type": "string",
+						"default": "none",
+						"description": "Margin CSS property of renaming"
+					},
+					"adverb.padding": {
+						"type": "string",
+						"default": "none",
+						"description": "Padding CSS property of renaming"
+					},
+					"adverb.borderRadius": {
+						"type": "string",
+						"default": "none",
+						"description": "Border-radius CSS property of renaming"
+					},
+					"adverb.border": {
+						"type": "string",
+						"default": "none",
+						"description": "Border CSS property of renaming"
+					}
+				}
+			}
+		],
+		"colors": [
+			{
+				"id": "adverb.backgroundColor",
+				"description": "Background color of renaming",
+				"defaults": {
+					"dark": "editor.background",
+					"light": "editor.background",
+					"highContrast": "editor.background"
+				}
 			}
 		]
 	},
@@ -108,7 +208,7 @@
 	"devDependencies": {
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "14.x",
+		"@types/node": "16.10.1",
 		"@types/vscode": "^1.60.0",
 		"@typescript-eslint/eslint-plugin": "^4.26.0",
 		"@typescript-eslint/parser": "^4.26.0",

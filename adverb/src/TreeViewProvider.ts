@@ -4,6 +4,10 @@ import * as path from "path";
 export class TreeViewProvider implements vscode.TreeDataProvider<Dependency> {
     constructor() { }
 
+    public refresh(): any {
+		// this._onDidChangeTreeData.fire(undefined);
+	}
+
     getTreeItem(element: Dependency): vscode.TreeItem {
         return element;
     }
