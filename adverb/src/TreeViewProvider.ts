@@ -1,35 +1,35 @@
 import * as vscode from "vscode";
-import * as path from "path";
+import workspaceState from "./workspaceState";
+import { RenamingTreeItem } from "./models";
 
-export class TreeViewProvider implements vscode.TreeDataProvider<Dependency> {
-    constructor() { }
+export class TreeViewProvider implements vscode.TreeDataProvider<RenamingTreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<RenamingTreeItem | undefined | null | void> = new vscode.EventEmitter<RenamingTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<RenamingTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    public refresh(): any {
-		// this._onDidChangeTreeData.fire(undefined);
-	}
+    constructor(private uri?: vscode.Uri) { }
 
-    getTreeItem(element: Dependency): vscode.TreeItem {
+    public refresh(uri?: vscode.Uri) {
+        this.uri = uri;
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    getTreeItem(element: RenamingTreeItem): vscode.TreeItem {
         return element;
     }
 
-    getChildren(element?: Dependency): Thenable<Dependency[]> {
-        return Promise.resolve([]);
+    getChildren(element?: RenamingTreeItem): Thenable<RenamingTreeItem[]> {
+        if (element || !this.uri)
+            return Promise.resolve([]);
+
+        const values = workspaceState.getValues(this.uri);
+        const result: RenamingTreeItem[] = [];
+        if (values) {
+            Object.keys(values).forEach(x => {
+                const value = values[x];
+                result.push(new RenamingTreeItem(value.originalName, value.newName, value.type));
+            });
+        }
+        return Promise.resolve(result);
     }
 }
 
-class Dependency extends vscode.TreeItem {
-    constructor(
-        public readonly label: string,
-        private version: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
-    ) {
-        super(label, collapsibleState);
-        this.tooltip = `${this.label}-${this.version}`;
-        this.description = this.version;
-    }
-
-    iconPath = {
-        light: path.join(__filename, "..", "..", "resources", "light", "dependency.svg"),
-        dark: path.join(__filename, "..", "..", "resources", "dark", "dependency.svg")
-    };
-}

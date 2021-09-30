@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
-import { parse } from "@babel/parser";
+import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
+import * as recast from "recast";
 import { Renaming } from "./models";
 import workspaceState from "./workspaceState";
 
@@ -51,7 +52,9 @@ const createAnnotation = (content: string, range: vscode.Range) => ({
     renderOptions: {
         before: {
             contentText: content,
-            backgroundColor: new vscode.ThemeColor("adverb.backgroundColor"),
+            // backgroundColor: new vscode.ThemeColor("adverb.backgroundColor"),
+            backgroundColor: vscode.workspace.getConfiguration("adverb").get("backgroundColor"),
+            fontColor: vscode.workspace.getConfiguration("adverb").get("foregroundColor"),
             fontStyle: vscode.workspace.getConfiguration("adverb").get("fontStyle"),
             fontWeight: vscode.workspace.getConfiguration("adverb").get("fontWeight"),
             textDecoration: `;
@@ -68,17 +71,66 @@ const createAnnotation = (content: string, range: vscode.Range) => ({
 
 
 const checkIfNameIsACodeSymbol = (editor: vscode.TextEditor, name: string): boolean => {
-    const ast = parse(editor.document.getText());
     let result = false;
-    try {
-        traverse(ast, {
-            enter(path) {
-                if (path.isIdentifier() && path.node.name === name)
-                    result = true;
-            }
-        });
-    } catch { }
+    const ast = parse(editor.document.getText());
+    traverse(ast, {
+        enter(path) {
+            if (path.isIdentifier() && path.node.name === name)
+                result = true;
+        }
+    });
     return result;
 };
+
+const parse = (code: string) => {
+    try {
+        return recast.parse(code, {
+            parser: {
+                parse: (source: string) =>
+                    babelParse(source, {
+                        sourceType: "module",
+                        allowImportExportEverywhere: true,
+                        allowReturnOutsideFunction: true,
+                        startLine: 1,
+
+                        // Tokens are necessary for Recast to do its magic ✨
+                        tokens: true,
+
+                        plugins: [
+                            "asyncGenerators",
+                            "bigInt",
+                            "classPrivateMethods",
+                            "classPrivateProperties",
+                            "classProperties",
+                            "decorators-legacy",
+                            "doExpressions",
+                            "dynamicImport",
+                            "exportDefaultFrom",
+                            "exportNamespaceFrom",
+                            "functionBind",
+                            "functionSent",
+                            "importMeta",
+                            "jsx",
+                            "logicalAssignment",
+                            "nullishCoalescingOperator",
+                            "numericSeparator",
+                            "objectRestSpread",
+                            "optionalCatchBinding",
+                            "optionalChaining",
+                            "partialApplication",
+                            ["pipelineOperator", { proposal: "minimal" }],
+                            "placeholders",
+                            "throwExpressions",
+                            "topLevelAwait",
+                            "typescript"
+                        ]
+                    })
+            },
+            tabWidth: 1
+        });
+    } catch (error) {
+
+    }
+}
 
 export default { checkIfNameIsACodeSymbol, refresh };

@@ -9,10 +9,10 @@ function test123(a, b, ...c): void {
 
 const test456 = (x: string): void => {
     console.log(x);
-}
+};
 
-test123('Foo', 'bar', 1, 2, 3, 4) 
+test123('Foo', 'bar', 1, 2, 3, 4);
 
-console.log('a', 'b', 'c', 'd', 'e')
+console.log('a', 'b', 'c', 'd', 'e');
 
-console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2)
+console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2);

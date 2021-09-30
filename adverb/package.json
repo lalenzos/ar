@@ -10,7 +10,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:adverb.rename"
+		"onCommand:adverb.rename",
+		"onView:adverb.renamings"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -22,9 +23,8 @@
 				"enablement": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
-				"command": "adverb.refreshRenaming",
+				"command": "adverb.refreshRenamings",
 				"title": "Refresh",
-				"category": "Adverb",
 				"icon": {
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
@@ -33,7 +33,6 @@
 			{
 				"command": "adverb.editRenaming",
 				"title": "Edit",
-				"category": "Adverb",
 				"icon": {
 					"light": "resources/light/edit.svg",
 					"dark": "resources/dark/edit.svg"
@@ -42,7 +41,6 @@
 			{
 				"command": "adverb.deleteRenaming",
 				"title": "Delete",
-				"category": "Adverb",
 				"icon": {
 					"light": "resources/light/trash.svg",
 					"dark": "resources/dark/trash.svg"
@@ -62,18 +60,6 @@
 					"command": "adverb.rename",
 					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
-				},
-				{
-					"command": "adverb.refreshRenaming",
-					"when": "false"
-				},
-				{
-					"command": "adverb.editRenaming",
-					"when": "false"
-				},
-				{
-					"command": "adverb.deleteRenaming",
-					"when": "false"
 				}
 			],
 			"editor/context": [
@@ -85,7 +71,7 @@
 			],
 			"view/title": [
 				{
-					"command": "adverb.refreshRenaming",
+					"command": "adverb.refreshRenamings",
 					"when": "view == adverb.renamings",
 					"group": "navigation"
 				}
@@ -93,12 +79,12 @@
 			"view/item/context": [
 				{
 					"command": "adverb.editRenaming",
-					"when": "view == adverb.renamings && viewItem == dependency",
+					"when": "view == adverb.renamings",
 					"group": "inline"
 				},
 				{
 					"command": "adverb.deleteRenaming",
-					"when": "view == adverb.renamings && viewItem == dependency",
+					"when": "view == adverb.renamings",
 					"group": "inline"
 				}
 			]
@@ -107,7 +93,7 @@
 			"explorer": [
 				{
 					"id": "adverb.renamings",
-					"name": "Adverb: Original symbol name <-> New symbol name",
+					"name": "Adverb: Renamings",
 					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
 				}
 			]
@@ -147,7 +133,7 @@
 							"800",
 							"900"
 						],
-						"description": "Font-weight CSS property of renaming"
+						"description": "Font weight CSS property of renaming"
 					},
 					"adverb.fontStyle": {
 						"type": "string",
@@ -157,12 +143,12 @@
 							"italic",
 							"inherit"
 						],
-						"description": "Font-style CSS property of renaming"
+						"description": "Font style CSS property of renaming"
 					},
 					"adverb.fontSize": {
 						"type": "string",
 						"default": "inherit",
-						"description": "Font-size CSS property of renaming"
+						"description": "Font size CSS property of renaming"
 					},
 					"adverb.margin": {
 						"type": "string",
@@ -177,24 +163,23 @@
 					"adverb.borderRadius": {
 						"type": "string",
 						"default": "none",
-						"description": "Border-radius CSS property of renaming"
+						"description": "Border radius CSS property of renaming"
 					},
 					"adverb.border": {
 						"type": "string",
 						"default": "none",
 						"description": "Border CSS property of renaming"
+					},
+					"adverb.backgroundColor": {
+						"type": "string",
+						"default": "inherit",
+						"description": "Background color CSS property of renaming"
+					},
+					"adverb.fontColor": {
+						"type": "string",
+						"default": "inherit",
+						"description": "Font color CSS property of renaming"
 					}
-				}
-			}
-		],
-		"colors": [
-			{
-				"id": "adverb.backgroundColor",
-				"description": "Background color of renaming",
-				"defaults": {
-					"dark": "editor.background",
-					"light": "editor.background",
-					"highContrast": "editor.background"
 				}
 			}
 		]
@@ -208,7 +193,7 @@
 	"devDependencies": {
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "16.10.1",
+		"@types/node": "^16.10.2",
 		"@types/vscode": "^1.60.0",
 		"@typescript-eslint/eslint-plugin": "^4.26.0",
 		"@typescript-eslint/parser": "^4.26.0",
@@ -218,6 +203,7 @@
 	"dependencies": {
 		"@babel/parser": "^7.15.7",
 		"@babel/traverse": "^7.15.4",
-		"@babel/types": "^7.15.6"
+		"@babel/types": "^7.15.6",
+		"recast": "^0.20.5"
 	}
 }

@@ -11,6 +11,13 @@ const getKey = (uri: vscode.Uri): string => {
     return uri.toString();
 }
 
+const getValue = (uri: vscode.Uri, key: string): StateObject | undefined => {
+    const values = getValues(uri);
+    if (!values)
+        return undefined;
+    return values[key];
+}
+
 const getValues = (uri: vscode.Uri): { [key: string]: StateObject } | undefined => {
     const key = getKey(uri);
     return _context.workspaceState.get<{ [key: string]: StateObject }>(key);
@@ -37,10 +44,15 @@ const removeValue = async (uri: vscode.Uri, stateObject: StateObject): Promise<b
         return false;
 
     const values = _context.workspaceState.get<{ [key: string]: StateObject }>(key)!;
-    if(Object.keys(values).includes(stateObject.originalName))
+    if (Object.keys(values).includes(stateObject.originalName))
         delete values[stateObject.originalName];
     await _context.workspaceState.update(key, values);
     return true;
 }
 
-export default { initialize, getValues, updateValue, removeValue };
+const clear = () => {
+    const keys = _context.workspaceState.keys();
+    keys.forEach(k => _context.workspaceState.update(k, undefined));
+}
+
+export default { initialize, clear, getValue, getValues, updateValue, removeValue };
