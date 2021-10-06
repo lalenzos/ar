@@ -18,9 +18,15 @@
 		"commands": [
 			{
 				"command": "adverb.rename",
-				"title": "Rename symbol (locally)",
+				"title": "Rename single symbol (locally)",
 				"category": "Adverb",
 				"enablement": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.renameAll",
+				"title": "Rename all symbols (locally)",
+				"category": "Adverb",
+				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
 				"command": "adverb.refreshRenamings",
@@ -52,6 +58,11 @@
 				"command": "adverb.rename",
 				"key": "shift+f2",
 				"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.renameAll",
+				"key": "ctrl+shift+f2",
+				"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 			}
 		],
 		"menus": {
@@ -60,6 +71,11 @@
 					"command": "adverb.rename",
 					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
+				},
+				{
+					"command": "adverb.renameAll",
+					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
+					"group": "Adverb"
 				}
 			],
 			"editor/context": [
@@ -67,6 +83,11 @@
 					"command": "adverb.rename",
 					"group": "1_modification",
 					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
+				},
+				{
+					"command": "adverb.renameAll",
+					"group": "1_modification",
+					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 				}
 			],
 			"view/title": [
@@ -110,12 +131,12 @@
 				"properties": {
 					"adverb.enabled": {
 						"type": "boolean",
-						"description": "Adverb renaming enabled",
+						"description": "Renaming enabled",
 						"default": true
 					},
 					"adverb.treeViewEnabled": {
 						"type": "boolean",
-						"description": "Adverb tree view (sidebar) enabled",
+						"description": "Tree view (sidebar) enabled",
 						"default": true
 					},
 					"adverb.fontWeight": {
@@ -193,10 +214,10 @@
 	"devDependencies": {
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^16.10.2",
+		"@types/node": "^16.10.3",
 		"@types/vscode": "^1.60.0",
-		"@typescript-eslint/eslint-plugin": "^4.26.0",
-		"@typescript-eslint/parser": "^4.26.0",
+		"@typescript-eslint/eslint-plugin": "^4.33.0",
+		"@typescript-eslint/parser": "^4.33.0",
 		"eslint": "^7.27.0",
 		"typescript": "^4.3.2"
 	},

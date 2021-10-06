@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
-import { Renaming } from "./models";
-import workspaceState from "./workspaceState";
+import { getRenamingTypes, Renaming } from "./models";
+import configuration from "./configuration";
 
 const hideDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor("editor.background"),
@@ -12,38 +12,55 @@ const hideDecorationType = vscode.window.createTextEditorDecorationType({
 });
 const renamingDecorationType = vscode.window.createTextEditorDecorationType({});
 
-const refresh = (editor: vscode.TextEditor, currentlySelectedPositions: vscode.Position[] | undefined = undefined) => {
-    const stateObjects = workspaceState.getValues(editor.document.uri);
-    if (stateObjects) {
-        const result: Renaming[] = [];
-        const originalNames = Object.keys(stateObjects);
-        const ast = parse(editor.document.getText());
-        traverse(ast, {
-            enter(path) {
-                if (path.isIdentifier() && originalNames.includes(path.node.name)) {
-                    const stateObject = stateObjects[path.node.name]!;
-                    const loc = path.node.loc!;
-                    const range: vscode.Range = new vscode.Range(
-                        new vscode.Position(loc.start.line - 1, loc.start.column),
-                        new vscode.Position(loc.end.line - 1, loc.end.column),
-                    );
+const refresh = async (editor: vscode.TextEditor, currentlySelectedPositions: vscode.Position[] | undefined = undefined) => {
+    const result: Renaming[] = [];
 
-                    if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
-                        //skip this "renaming"
-                    } else {
-                        result.push(new Renaming(stateObject.originalName, stateObject.newName, stateObject.type, range))
+    const renamingTypes = getRenamingTypes();
+    const fileConfig = await configuration.getSourceCodeFileConfiguration(editor.document.uri)
+    if (fileConfig) {
+        const renamings = fileConfig.singleRenamingConfigurations;
+        if (fileConfig.fileRenamingTypeId || renamings) {
+            const originalNames: string[] = renamings ? Object.keys(renamings) : [];
+            const ast = parse(editor.document.getText());
+            traverse(ast, {
+                enter(path) {
+                    if (path.isIdentifier()) {
+                        if (fileConfig.fileRenamingTypeId || originalNames.includes(path.node.name)) {
+                            const loc = path.node.loc!;
+                            const range: vscode.Range = new vscode.Range(
+                                new vscode.Position(loc.start.line - 1, loc.start.column),
+                                new vscode.Position(loc.end.line - 1, loc.end.column),
+                            );
+
+                            if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
+                                //skip this "renaming"
+                            } else {
+                                if (originalNames.includes(path.node.name)) {
+                                    const renaming = renamings![path.node.name]!;
+                                    const renamingType = renamingTypes.find(x => x.id === renaming.renamingTypeId)!;
+                                    result.push(new Renaming(path.node.name, renaming.newName, renamingType, range));
+                                } else {
+                                    const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenamingTypeId)
+                                    if (renamingType?.getNewNameFunction) {
+                                        const newName = renamingType.getNewNameFunction(path.node.name);
+                                        if (newName)
+                                            result.push(new Renaming(path.node.name, newName, renamingType, range));
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
-
-        //Hide original identifiers
-        editor.setDecorations(hideDecorationType, result);
-
-        //"Rename" original identifier by adding the "new" name as annotation
-        const annotations = result.map(i => createAnnotation(i.newName, i.range));
-        editor.setDecorations(renamingDecorationType, annotations);
+            });
+        }
     }
+
+    //Hide original identifiers
+    editor.setDecorations(hideDecorationType, result);
+
+    //"Rename" original identifier by adding the "new" name as annotation
+    const annotations = result.map(i => createAnnotation(i.newName, i.range));
+    editor.setDecorations(renamingDecorationType, annotations);
 };
 
 
@@ -52,9 +69,8 @@ const createAnnotation = (content: string, range: vscode.Range) => ({
     renderOptions: {
         before: {
             contentText: content,
-            // backgroundColor: new vscode.ThemeColor("adverb.backgroundColor"),
             backgroundColor: vscode.workspace.getConfiguration("adverb").get("backgroundColor"),
-            fontColor: vscode.workspace.getConfiguration("adverb").get("foregroundColor"),
+            fontColor: vscode.workspace.getConfiguration("adverb").get("fontColor"),
             fontStyle: vscode.workspace.getConfiguration("adverb").get("fontStyle"),
             fontWeight: vscode.workspace.getConfiguration("adverb").get("fontWeight"),
             textDecoration: `;
@@ -92,10 +108,7 @@ const parse = (code: string) => {
                         allowImportExportEverywhere: true,
                         allowReturnOutsideFunction: true,
                         startLine: 1,
-
-                        // Tokens are necessary for Recast to do its magic ✨
                         tokens: true,
-
                         plugins: [
                             "asyncGenerators",
                             "bigInt",
@@ -129,7 +142,7 @@ const parse = (code: string) => {
             tabWidth: 1
         });
     } catch (error) {
-
+        console.log(error);
     }
 }
 

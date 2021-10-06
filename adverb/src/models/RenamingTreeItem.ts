@@ -6,10 +6,9 @@ export class RenamingTreeItem extends vscode.TreeItem {
     constructor(
         public originalName: string,
         public newName: string,
-        public type: RenamingType,
+        public renamingTypeId: number,
     ) {
         super(newName, vscode.TreeItemCollapsibleState.None);
-        this.tooltip = `${originalName} -> ${newName} (${this.type.description})`;
         this.description = originalName;
     }
 

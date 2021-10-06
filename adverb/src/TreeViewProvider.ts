@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import workspaceState from "./workspaceState";
-import { RenamingTreeItem } from "./models";
+import configuration from "./configuration";
+import { getRenamingTypes, RenamingTreeItem } from "./models";
 
 export class TreeViewProvider implements vscode.TreeDataProvider<RenamingTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<RenamingTreeItem | undefined | null | void> = new vscode.EventEmitter<RenamingTreeItem | undefined | null | void>();
@@ -17,19 +17,28 @@ export class TreeViewProvider implements vscode.TreeDataProvider<RenamingTreeIte
         return element;
     }
 
-    getChildren(element?: RenamingTreeItem): Thenable<RenamingTreeItem[]> {
+    async getChildren(element?: RenamingTreeItem): Promise<RenamingTreeItem[]> {
         if (element || !this.uri)
-            return Promise.resolve([]);
+            return [];
 
-        const values = workspaceState.getValues(this.uri);
+        const fileConfig = await configuration.getSourceCodeFileConfiguration(this.uri);
+        if (!fileConfig)
+            return [];
+
+        const renamings = fileConfig.singleRenamingConfigurations;
         const result: RenamingTreeItem[] = [];
-        if (values) {
-            Object.keys(values).forEach(x => {
-                const value = values[x];
-                result.push(new RenamingTreeItem(value.originalName, value.newName, value.type));
+        if (fileConfig.fileRenamingTypeId) {
+            const renamingType = getRenamingTypes().find(x => x.id === fileConfig.fileRenamingTypeId);
+            if (renamingType)
+                result.push(new RenamingTreeItem("all symbol names", renamingType.description, fileConfig.fileRenamingTypeId));
+        }
+        if (renamings) {
+            Object.keys(renamings).forEach(x => {
+                const value = renamings[x];
+                result.push(new RenamingTreeItem(value.originalName, value.newName, value.renamingTypeId));
             });
         }
-        return Promise.resolve(result);
+        return result;
     }
 }
 
