@@ -49,20 +49,21 @@ export const getRenamingTypes = (): RenamingType[] => [
         getNewNameFunction: (originalName: string) => originalName
             .replace(/\W+/g, " ").split(/ |\B(?=[A-Z])/).map(word => word.toLowerCase()).join('_')
     },
-    // {
-    //     id: 6,
-    //     description: "Change to kebab-case",
-    //     getNewNameFunction: (originalName: string) => originalName
-    //         .replace(/\W+/g, " ").split(/ |\B(?=[A-Z])/).map(word => word.toLowerCase()).join('-')
-    // },
     {
         id: 7,
+        description: "Change to kebab-case",
+        onlyForSingleRenaming: false,
+        getNewNameFunction: (originalName: string) => originalName
+            .replace(/\W+/g, " ").split(/ |\B(?=[A-Z])/).map(word => word.toLowerCase()).join('-')
+    },
+    {
+        id: 8,
         description: "Change to UPPERCASE",
         onlyForSingleRenaming: false,
         getNewNameFunction: (originalName: string) => originalName?.toUpperCase()
     },
     {
-        id: 8,
+        id: 9,
         description: "Change to lowercase",
         onlyForSingleRenaming: false,
         getNewNameFunction: (originalName: string) => originalName?.toLowerCase()

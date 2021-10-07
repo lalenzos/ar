@@ -63,7 +63,6 @@ const refresh = async (editor: vscode.TextEditor, currentlySelectedPositions: vs
     editor.setDecorations(renamingDecorationType, annotations);
 };
 
-
 const createAnnotation = (content: string, range: vscode.Range) => ({
     range,
     renderOptions: {
@@ -84,7 +83,6 @@ const createAnnotation = (content: string, range: vscode.Range) => ({
         },
     } as vscode.DecorationInstanceRenderOptions,
 } as vscode.DecorationOptions);
-
 
 const checkIfNameIsACodeSymbol = (editor: vscode.TextEditor, name: string): boolean => {
     let result = false;
