@@ -193,7 +193,7 @@
 					},
 					"adverb.backgroundColor": {
 						"type": "string",
-						"default": "inherit",
+						"defaults": "inherit",
 						"description": "Background color CSS property of renaming"
 					},
 					"adverb.fontColor": {
@@ -215,7 +215,7 @@
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
 		"@types/node": "^16.10.3",
-		"@types/vscode": "^1.60.0",
+		"@types/vscode": "^1.61.0",
 		"@typescript-eslint/eslint-plugin": "^4.33.0",
 		"@typescript-eslint/parser": "^4.33.0",
 		"eslint": "^7.27.0",

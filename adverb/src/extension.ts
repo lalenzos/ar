@@ -1,20 +1,37 @@
 import * as vscode from "vscode";
 import { getRenamingTypes, RenamingTreeItem, RenamingConfiguration } from "./models";
-import { TreeViewProvider } from "./treeViewProvider";
-import renaming from "./ast";
+import ast from "./ast";
 import configuration from "./configuration";
+import { TreeViewProvider } from "./treeViewProvider";
 
-const SUPPORTED_LANGUAGES = ["javascript", "typescript"];
+export const SUPPORTED_LANGUAGES = ["javascript", "typescript"];
+
+let timeout: NodeJS.Timer | undefined = undefined;
 let treeViewProvider: TreeViewProvider;
 
 const refresh = (positions: vscode.Position[] | undefined = undefined) => {
 	const editor = vscode.window.activeTextEditor;
-	if (!editor || !SUPPORTED_LANGUAGES.includes(editor.document.languageId))
-		return;
 
-	renaming.refresh(editor, positions);
-	treeViewProvider.refresh(editor.document.uri);
+	if (timeout) {
+		clearTimeout(timeout);
+		timeout = undefined;
+	}
+	timeout = setTimeout(() => {
+		ast.refresh(editor, positions);
+		treeViewProvider.refresh(editor?.document.uri);
+	}, 100);
 };
+
+const getPositionRanges = (start: vscode.Position, stop: vscode.Position): vscode.Position[] => {
+	const result: vscode.Position[] = [start];
+	let b: vscode.Position = start;
+	while (b.line < stop.line - 1) {
+		b = new vscode.Position(b.line + 1, 0);
+		result.push(b);
+	}
+	result.push(stop);
+	return result;
+}
 
 const showQuickPick = async (title: string, items: string[]): Promise<string | undefined> => {
 	return await vscode.window.showQuickPick(items, {
@@ -28,21 +45,20 @@ const showInputDialog = async (originalName: string): Promise<string | undefined
 		title: `Enter a new name for '${originalName}':`,
 		value: originalName,
 		validateInput: (value) => value === originalName ? "Please choose a new name." : undefined
-	})
+	});
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	treeViewProvider = new TreeViewProvider();
 
 	vscode.window.onDidChangeActiveTextEditor((editor) => refresh(), null, context.subscriptions);
-	vscode.window.onDidChangeTextEditorSelection((event) => refresh(event.selections.map(x => x.start)), null, context.subscriptions);
+	vscode.window.onDidChangeTextEditorSelection((event) => refresh(event.selections.length > 0 ? getPositionRanges(event.selections[0].start, event.selections[0].end) : []), null, context.subscriptions);
 	vscode.workspace.onDidChangeConfiguration((event) => { event.affectsConfiguration("adverb") && refresh() });
 	vscode.workspace.onDidChangeTextDocument(
 		(event) => {
 			const editor = vscode.window.activeTextEditor;
 			if (!editor || event.document !== editor.document)
 				return;
-
 			if (event.contentChanges.length === 1)
 				refresh([event.contentChanges[0].range.start]);
 			else
@@ -59,15 +75,15 @@ export function activate(context: vscode.ExtensionContext) {
 		const cursorPosition = editor.selection.start;
 		const wordRange = editor.document.getWordRangeAtPosition(cursorPosition);
 		if (!wordRange) {
-			vscode.window.showErrorMessage("No element to rename found.");
+			vscode.window.showErrorMessage("No symbol to rename found.");
 			return;
 		}
 		const originalName = editor.document.getText(wordRange);
 		if (!originalName) {
-			vscode.window.showErrorMessage("No element to rename found.");
+			vscode.window.showErrorMessage("No symbol to rename found.");
 			return;
 		}
-		if (!renaming.checkIfNameIsACodeSymbol(editor, originalName)) {
+		if (!ast.checkIfNameIsACodeSymbol(editor, originalName)) {
 			vscode.window.showErrorMessage(`'${originalName}' is not a code symbol.`);
 			return;
 		}
@@ -100,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const renamingTypes = getRenamingTypes();
 		const items: string[] = renamingTypes.filter(x => x.onlyForSingleRenaming === false).map(x => x.description);
-		const result = await showQuickPick(`Choose a renaming technique:`, items);
+		const result = await showQuickPick(`Choose a renaming technique for all symbols:`, items);
 		const renamingType = renamingTypes.find(x => x.description === result);
 		if (renamingType) {
 			const update = await configuration.updateSourceCodeFileConfigurationsRenaming(editor.document.uri, renamingType);
@@ -162,6 +178,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 		refresh();
 	});
+
+	refresh();
 }
 
 export function deactivate() { }
