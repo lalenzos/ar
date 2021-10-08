@@ -19,6 +19,7 @@ The following renaming techniques can be used to rename the source code symbols:
 * change to kamelCase
 * change to PascalCase
 * change to snake_case
+* change to kebab-case
 * change to UPPERCASE
 * change to lowercase
 
