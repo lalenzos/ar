@@ -2,13 +2,13 @@
 
 > **Rename code symbol names locally without changing the original source code file.**
 
-This vscode extension for *javascript/typescript* makes it possible to increase code readability by renaming code symbols without changing the underlying source code file. The "renames" are only visual changes: the original symbol name is hidden, while the "new" name is displayed instead of the original name.
+This vscode extension for *javascript/typescript* makes it possible to increase code readability by renaming code symbols without changing the underlying source code file. The "renames" are only visual changes: the original symbol name gets hidden, while the "new" name is displayed instead of the original name.
 
 ## Features
 
 For each source code file, it can be decided individually whether all symbol names should be "renamed" automatically using a renaming technique, or only individual manually selected symbols.
 
-To "rename" a single symbol locally, you can use the command **"Adverb: Rename symbol (locally)"**, that can be executed via the context menu, the command palette or the shortcut `Shift + F2`. To "rename" all symbols of a source code file, the corresponding command **"Adverb: Rename all symbols (locally)"** can also be executed from the context menu, from the command palette or via the key combination `Ctrl + Shift + F2`.
+To "rename" a single symbol locally, you can use the command **"Adverb: Rename single symbol (locally)"**, that can be executed via the context menu, the command palette or the shortcut `Shift + F2`. To "rename" all symbols of a source code file, the corresponding command **"Adverb: Rename all symbols (locally)"** can also be executed from the context menu, from the command palette or via the key combination `Ctrl + Shift + F2`.
 After executing the respective command, a selection window appears in which the respective renaming technique can be selected.
 
 The following renaming techniques can be used to rename the source code symbols:
