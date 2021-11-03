@@ -31,14 +31,14 @@ const getPositionRanges = (start: vscode.Position, stop: vscode.Position): vscod
 	}
 	result.push(stop);
 	return result;
-}
+};
 
 const showQuickPick = async (title: string, items: string[]): Promise<string | undefined> => {
 	return await vscode.window.showQuickPick(items, {
 		canPickMany: false,
 		title: title
 	});
-}
+};
 
 const showInputDialog = async (originalName: string): Promise<string | undefined> => {
 	return await vscode.window.showInputBox({
@@ -46,10 +46,29 @@ const showInputDialog = async (originalName: string): Promise<string | undefined
 		value: originalName,
 		validateInput: (value) => value === originalName ? "Please choose a new name." : undefined
 	});
-}
+};
+
+const deleteRenaming = async (editor: vscode.TextEditor, originalName: string) => {
+	if (originalName === "all symbol names") {
+		const result = await configuration.updateSourceCodeFileConfigurationsRenaming(editor.document.uri, undefined);
+		if (result)
+			vscode.window.showInformationMessage(`Renaming of all symbols removed.`);
+	} else {
+		const value = await configuration.getRenamingConfiguration(editor.document.uri, originalName);
+		if (value) {
+			const result = await configuration.removeRenamingConfiguration(editor.document.uri, value);
+			if (result)
+				vscode.window.showInformationMessage(`Renaming ('${value.originalName}' -> '${value.newName}') successfully removed.`);
+		}
+	}
+};
 
 export function activate(context: vscode.ExtensionContext) {
 	treeViewProvider = new TreeViewProvider();
+	const configuration = vscode.workspace.getConfiguration("editor");
+	const fontFamilies = configuration.get("fontFamily") as string;
+	if(!fontFamilies.includes("Segoe UI Emoji"))
+		configuration.update("fontFamily", `${fontFamilies}, 'Segoe UI Emoji'`, vscode.ConfigurationTarget.Workspace);
 
 	vscode.window.onDidChangeActiveTextEditor((editor) => refresh(), null, context.subscriptions);
 	vscode.window.onDidChangeTextEditorSelection((event) => refresh(event.selections.length > 0 ? getPositionRanges(event.selections[0].start, event.selections[0].end) : []), null, context.subscriptions);
@@ -163,23 +182,39 @@ export function activate(context: vscode.ExtensionContext) {
 		if (!editor)
 			return;
 
-		if (node.originalName === "all symbol names") {
-			const result = await configuration.updateSourceCodeFileConfigurationsRenaming(editor.document.uri, undefined);
-			if (result)
-				vscode.window.showInformationMessage(`Renaming of all symbols removed.`);
-		} else {
-			const value = await configuration.getRenamingConfiguration(editor.document.uri, node.originalName);
-			if (value) {
-				const result = await configuration.removeRenamingConfiguration(editor.document.uri, value);
-				if (result)
-					vscode.window.showInformationMessage(`Renaming ('${value.originalName}' -> '${value.newName}') successfully removed.`);
-			}
-		}
+		await deleteRenaming(editor, node.originalName);
 
 		refresh();
 	});
+	vscode.commands.registerCommand("adverb.renameCode", async (node: RenamingTreeItem) => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor)
+			return;
 
-	refresh();
+		vscode.window.showInformationMessage("Do you really want to rename the code in the selected way?", ...["Yes", "No"])
+			.then(async (answer) => {
+			  if (answer === "Yes") {
+				let transformedCode: string | undefined;
+				if (node.originalName === "all symbol names")
+					transformedCode = await ast.renameCode(editor, undefined);
+				else
+					transformedCode = await ast.renameCode(editor, node.originalName);
+
+				if(transformedCode){
+					const edit = new vscode.WorkspaceEdit();
+					const wholeDocument = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(editor.document.lineCount, 0));
+					const updateCode = new vscode.TextEdit(wholeDocument, transformedCode);
+					edit.set(editor.document.uri, [updateCode]);
+					vscode.workspace.applyEdit(edit);
+
+					await deleteRenaming(editor, node.originalName);
+					refresh();
+				}
+				
+				refresh();
+			}
+		});
+	});
 }
 
 export function deactivate() { }

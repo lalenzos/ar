@@ -1,0 +1,4 @@
+- folding (FoldingRange)
+- emojis
+- change code really
+- further renaming with techniques

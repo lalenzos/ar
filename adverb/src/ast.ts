@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import generate from "@babel/generator";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
@@ -67,6 +68,41 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
         const annotations = result.map(i => createAnnotation(i.newName, i.range));
         editor.setDecorations(renamingDecorationType, annotations);
     }
+};
+
+const renameCode = async (editor: vscode.TextEditor | undefined, rename?: string): Promise<string | undefined> => {
+    if(editor){
+        if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
+            const renamingTypes = getRenamingTypes();
+            const fileConfig = await configuration.getSourceCodeFileConfiguration(editor.document.uri)
+            if (fileConfig) {
+                const renamings = fileConfig.singleRenamingConfigurations;
+                const originalNames: string[] = renamings ? Object.keys(renamings) : [];
+                const ast = parse(editor.document.getText());
+                if (!ast)
+                    return undefined;
+                traverse(ast, {
+                    enter(path) {
+                        if (path.isIdentifier()) {
+                            if (!rename && !originalNames.includes(path.node.name)){
+                                const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenamingTypeId);
+                                if (renamingType?.getNewNameFunction) {
+                                    const newName = renamingType.getNewNameFunction(path.node.name);
+                                    if (newName)
+                                        path.node.name = newName;
+                                }
+                            }else if(rename === path.node.name) {
+                                const renaming = renamings![path.node.name]!;
+                                path.node.name = renaming.newName;
+                            }
+                        }
+                    }
+                });
+                return generate(ast).code;
+            }
+        }
+    }
+    return undefined;
 };
 
 const createAnnotation = (content: string, range: vscode.Range) => {
@@ -156,4 +192,4 @@ const parse = (code: string) => {
     }
 }
 
-export default { checkIfNameIsACodeSymbol, refresh };
+export default { checkIfNameIsACodeSymbol, refresh, renameCode };
