@@ -18,18 +18,24 @@
 		"commands": [
 			{
 				"command": "adverb.rename",
-				"title": "Rename single symbol (locally)",
+				"title": "Rename single symbol",
 				"category": "Adverb",
 				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
 				"command": "adverb.renameAll",
-				"title": "Rename all symbols (locally)",
+				"title": "Rename all symbols",
 				"category": "Adverb",
 				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
-				"command": "adverb.refreshRenamings",
+				"command": "adverb.fold",
+				"title": "Fold lines and show summary",
+				"category": "Adverb",
+				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.globalRefreshRenamings",
 				"title": "Refresh",
 				"icon": {
 					"light": "resources/light/refresh.svg",
@@ -37,7 +43,7 @@
 				}
 			},
 			{
-				"command": "adverb.editRenaming",
+				"command": "adverb.globalEditRenaming",
 				"title": "Edit",
 				"icon": {
 					"light": "resources/light/edit.svg",
@@ -45,7 +51,7 @@
 				}
 			},
 			{
-				"command": "adverb.deleteRenaming",
+				"command": "adverb.globalDeleteRenaming",
 				"title": "Delete",
 				"icon": {
 					"light": "resources/light/trash.svg",
@@ -53,11 +59,75 @@
 				}
 			},
 			{
-				"command": "adverb.renameCode",
-				"title": "Rename code",
+				"command": "adverb.localRefreshRenamings",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "adverb.localEditRenaming",
+				"title": "Edit",
+				"icon": {
+					"light": "resources/light/edit.svg",
+					"dark": "resources/dark/edit.svg"
+				}
+			},
+			{
+				"command": "adverb.localDeleteRenaming",
+				"title": "Delete",
+				"icon": {
+					"light": "resources/light/trash.svg",
+					"dark": "resources/dark/trash.svg"
+				}
+			},
+			{
+				"command": "adverb.localActuallyRename",
+				"title": "Actually rename",
 				"icon": {
 					"light": "resources/light/rename.svg",
 					"dark": "resources/dark/rename.svg"
+				}
+			},
+			{
+				"command": "adverb.expandAllFoldings",
+				"title": "Expand all",
+				"icon": {
+					"light": "resources/light/expand-all.svg",
+					"dark": "resources/dark/expand-all.svg"
+				}
+			},
+			{
+				"command": "adverb.collapseAllFoldings",
+				"title": "Collapse all",
+				"icon": {
+					"light": "resources/light/collapse-all.svg",
+					"dark": "resources/dark/collapse-all.svg"
+				}
+			},
+			{
+				"command": "adverb.refreshFoldings",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "adverb.editFolding",
+				"title": "Edit",
+				"icon": {
+					"light": "resources/light/edit.svg",
+					"dark": "resources/dark/edit.svg"
+				}
+			},
+			{
+				"command": "adverb.deleteFolding",
+				"title": "Delete",
+				"icon": {
+					"light": "resources/light/trash.svg",
+					"dark": "resources/dark/trash.svg"
 				}
 			}
 		],
@@ -84,6 +154,11 @@
 					"command": "adverb.renameAll",
 					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
+				},
+				{
+					"command": "adverb.fold",
+					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
+					"group": "Adverb"
 				}
 			],
 			"editor/context": [
@@ -96,29 +171,74 @@
 					"command": "adverb.renameAll",
 					"group": "1_modification",
 					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				},
+				{
+					"command": "adverb.fold",
+					"group": "1_modification",
+					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 				}
 			],
 			"view/title": [
 				{
-					"command": "adverb.refreshRenamings",
-					"when": "view == adverb.renamings",
+					"command": "adverb.globalRefreshRenamings",
+					"when": "view == adverb.globalRenamings",
+					"group": "navigation"
+				},
+				{
+					"command": "adverb.localRefreshRenamings",
+					"when": "view == adverb.localRenamings",
+					"group": "navigation"
+				},
+				{
+					"command": "adverb.refreshFoldings",
+					"when": "view == adverb.foldings",
+					"group": "navigation"
+				},
+				{
+					"command": "adverb.expandAllFoldings",
+					"when": "view == adverb.foldings",
+					"group": "navigation"
+				},
+				{
+					"command": "adverb.collapseAllFoldings",
+					"when": "view == adverb.foldings",
 					"group": "navigation"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "adverb.editRenaming",
-					"when": "view == adverb.renamings",
+					"command": "adverb.globalDeleteRenaming",
+					"when": "view == adverb.globalRenamings",
 					"group": "inline"
 				},
 				{
-					"command": "adverb.deleteRenaming",
-					"when": "view == adverb.renamings",
+					"command": "adverb.globalEditRenaming",
+					"when": "view == adverb.globalRenamings",
 					"group": "inline"
 				},
 				{
-					"command": "adverb.renameCode",
-					"when": "view == adverb.renamings",
+					"command": "adverb.localActuallyRename",
+					"when": "view == adverb.localRenamings",
+					"group": "inline"
+				},
+				{
+					"command": "adverb.localDeleteRenaming",
+					"when": "view == adverb.localRenamings",
+					"group": "inline"
+				},
+				{
+					"command": "adverb.localEditRenaming",
+					"when": "view == adverb.localRenamings",
+					"group": "inline"
+				},
+				{
+					"command": "adverb.deleteFolding",
+					"when": "view == adverb.foldings",
+					"group": "inline"
+				},
+				{
+					"command": "adverb.editFolding",
+					"when": "view == adverb.foldings",
 					"group": "inline"
 				}
 			]
@@ -126,16 +246,34 @@
 		"views": {
 			"explorer": [
 				{
-					"id": "adverb.renamings",
-					"name": "Adverb: Renamings",
+					"id": "adverb.globalRenamings",
+					"name": "Adverb: Renamings (global)",
+					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
+				},
+				{
+					"id": "adverb.localRenamings",
+					"name": "Adverb: Renamings (local)",
+					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
+				},
+				{
+					"id": "adverb.foldings",
+					"name": "Adverb: Foldings (local)",
 					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
 				}
 			]
 		},
 		"viewsWelcome": [
 			{
-				"view": "adverb.renamings",
-				"contents": "No renamings found."
+				"view": "adverb.globalRenamings",
+				"contents": "No global renamings found."
+			},
+			{
+				"view": "adverb.localRenamings",
+				"contents": "No local renamings found."
+			},
+			{
+				"view": "adverb.foldings",
+				"contents": "No foldings found."
 			}
 		],
 		"configuration": [

@@ -1,11 +1,12 @@
 "use strict";
 var testVariable = "Hallo";
 testVariable = "";
+
 const anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2 = "Ciao";
 function test123(a, b, ...c) {
     console.log(a, b, ...c);
-}
-;
+};
+
 const test456 = (x) => {
     console.log(x);
 };

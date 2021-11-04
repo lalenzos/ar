@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { RenamingType } from ".";
 
 export class RenamingTreeItem extends vscode.TreeItem {
     constructor(

@@ -19,10 +19,10 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
         const result: Renaming[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
             const renamingTypes = getRenamingTypes();
-            const fileConfig = await configuration.getSourceCodeFileConfiguration(editor.document.uri)
+            const fileConfig = await configuration.getMergedConfigurationForCurrentFile(editor.document.uri)
             if (fileConfig) {
-                const renamings = fileConfig.singleRenamingConfigurations;
-                if (fileConfig.fileRenamingTypeId || renamings) {
+                const renamings = fileConfig.renamings;
+                if (fileConfig.fileRenaming || renamings) {
                     const originalNames: string[] = renamings ? Object.keys(renamings) : [];
                     const ast = parse(editor.document.getText());
                     if (!ast)
@@ -30,11 +30,11 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
                     traverse(ast, {
                         enter(path) {
                             if (path.isIdentifier()) {
-                                if (fileConfig.fileRenamingTypeId || originalNames.includes(path.node.name)) {
+                                if (fileConfig.fileRenaming || originalNames.includes(path.node.name)) {
                                     const loc = path.node.loc!;
                                     const range: vscode.Range = new vscode.Range(
                                         new vscode.Position(loc.start.line - 1, loc.start.column),
-                                        new vscode.Position(loc.end.line - 1, loc.end.column),
+                                        new vscode.Position(loc.end.line - 1, loc.end.column)
                                     );
 
                                     if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
@@ -45,7 +45,7 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
                                             const renamingType = renamingTypes.find(x => x.id === renaming.renamingTypeId)!;
                                             result.push(new Renaming(path.node.name, renaming.newName, renamingType, range));
                                         } else {
-                                            const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenamingTypeId)
+                                            const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming)
                                             if (renamingType?.getNewNameFunction) {
                                                 const newName = renamingType.getNewNameFunction(path.node.name);
                                                 if (newName)
@@ -70,40 +70,60 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
     }
 };
 
-const renameCode = async (editor: vscode.TextEditor | undefined, rename?: string): Promise<string | undefined> => {
-    if(editor){
+const getSymbolPosition = (editor: vscode.TextEditor | undefined, name: string): vscode.Position | undefined => {
+    let result: vscode.Position | undefined = undefined;
+    if (editor) {
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-            const renamingTypes = getRenamingTypes();
-            const fileConfig = await configuration.getSourceCodeFileConfiguration(editor.document.uri)
-            if (fileConfig) {
-                const renamings = fileConfig.singleRenamingConfigurations;
-                const originalNames: string[] = renamings ? Object.keys(renamings) : [];
-                const ast = parse(editor.document.getText());
-                if (!ast)
-                    return undefined;
-                traverse(ast, {
-                    enter(path) {
-                        if (path.isIdentifier()) {
-                            if (!rename && !originalNames.includes(path.node.name)){
-                                const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenamingTypeId);
-                                if (renamingType?.getNewNameFunction) {
-                                    const newName = renamingType.getNewNameFunction(path.node.name);
-                                    if (newName)
-                                        path.node.name = newName;
-                                }
-                            }else if(rename === path.node.name) {
-                                const renaming = renamings![path.node.name]!;
-                                path.node.name = renaming.newName;
-                            }
-                        }
+            const ast = parse(editor.document.getText());
+            if (!ast)
+                return result;
+            traverse(ast, {
+                enter(path) {
+                    if (path.isIdentifier() && path.node.name === name) {
+                        result = new vscode.Position(path.node.loc!.start.line - 1, path.node.loc!.start.column);
+                        path.stop();
                     }
-                });
-                return generate(ast).code;
-            }
+                }
+            });
         }
     }
-    return undefined;
+    return result;
 };
+
+// const renameCode = async (editor: vscode.TextEditor | undefined, rename?: string): Promise<string | undefined> => {
+//     if (editor) {
+//         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
+//             const renamingTypes = getRenamingTypes();
+//             const fileConfig = await configuration.getLocalConfiguration(editor.document.uri)
+//             if (fileConfig) {
+//                 const renamings = fileConfig.renamings;
+//                 const originalNames: string[] = renamings ? Object.keys(renamings) : [];
+//                 const ast = parse(editor.document.getText());
+//                 if (!ast)
+//                     return undefined;
+//                 traverse(ast, {
+//                     enter(path) {
+//                         if (path.isIdentifier()) {
+//                             if (!rename && !originalNames.includes(path.node.name)) {
+//                                 const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming);
+//                                 if (renamingType?.getNewNameFunction) {
+//                                     const newName = renamingType.getNewNameFunction(path.node.name);
+//                                     if (newName)
+//                                         path.node.name = newName;
+//                                 }
+//                             } else if (rename === path.node.name) {
+//                                 const renaming = renamings![path.node.name]!;
+//                                 path.node.name = renaming.newName;
+//                             }
+//                         }
+//                     }
+//                 });
+//                 return generate(ast).code;
+//             }
+//         }
+//     }
+//     return undefined;
+// };
 
 const createAnnotation = (content: string, range: vscode.Range) => {
     const backgroundColor: string | undefined = vscode.workspace.getConfiguration("adverb").get("backgroundColor");
@@ -192,4 +212,4 @@ const parse = (code: string) => {
     }
 }
 
-export default { checkIfNameIsACodeSymbol, refresh, renameCode };
+export default { checkIfNameIsACodeSymbol, refresh, getSymbolPosition };

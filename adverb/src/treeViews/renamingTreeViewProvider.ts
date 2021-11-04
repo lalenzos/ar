@@ -1,12 +1,14 @@
 import * as vscode from "vscode";
-import configuration from "./configuration";
-import { getRenamingTypes, RenamingTreeItem } from "./models";
+import configuration from "../configuration";
+import { getRenamingTypes } from "../models";
+import { GlobalConfiguration } from "../models/GlobalConfiguration";
+import { RenamingTreeItem } from ".";
 
-export class TreeViewProvider implements vscode.TreeDataProvider<RenamingTreeItem> {
+export class RenamingTreeViewProvider implements vscode.TreeDataProvider<RenamingTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<RenamingTreeItem | undefined | null | void> = new vscode.EventEmitter<RenamingTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<RenamingTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    constructor(private uri?: vscode.Uri) { }
+    constructor(private global: boolean, private uri?: vscode.Uri) { }
 
     public refresh(uri?: vscode.Uri) {
         this.uri = uri;
@@ -18,19 +20,23 @@ export class TreeViewProvider implements vscode.TreeDataProvider<RenamingTreeIte
     }
 
     async getChildren(element?: RenamingTreeItem): Promise<RenamingTreeItem[]> {
-        if (element || !this.uri)
+        if (element || (!this.global && !this.uri))
             return [];
 
-        const fileConfig = await configuration.getSourceCodeFileConfiguration(this.uri);
+        let fileConfig: GlobalConfiguration | undefined;
+        if (this.global)
+            fileConfig = await configuration.getGlobalConfiguration();
+        else
+            fileConfig = await configuration.getLocalConfiguration(this.uri!);
         if (!fileConfig)
             return [];
 
-        const renamings = fileConfig.singleRenamingConfigurations;
+        const renamings = fileConfig.renamings;
         const result: RenamingTreeItem[] = [];
-        if (fileConfig.fileRenamingTypeId) {
-            const renamingType = getRenamingTypes().find(x => x.id === fileConfig.fileRenamingTypeId);
+        if (fileConfig.fileRenaming) {
+            const renamingType = getRenamingTypes().find(x => x.id === fileConfig!.fileRenaming);
             if (renamingType)
-                result.push(new RenamingTreeItem("all symbol names", renamingType.description, fileConfig.fileRenamingTypeId));
+                result.push(new RenamingTreeItem("all symbol names", renamingType.description, fileConfig.fileRenaming));
         }
         if (renamings) {
             Object.keys(renamings).forEach(x => {
