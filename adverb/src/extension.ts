@@ -6,24 +6,39 @@ import { FoldingTreeItem, FoldingTreeViewProvider, RenamingTreeItem, RenamingTre
 
 export const SUPPORTED_LANGUAGES = ["javascript", "typescript"];
 
-let timeout: NodeJS.Timer | undefined = undefined;
+let renamingTimeout: NodeJS.Timer | undefined = undefined;
+let foldingTimeout: NodeJS.Timer | undefined = undefined;
 let globalTreeViewProvider: RenamingTreeViewProvider;
 let localTreeViewProvider: RenamingTreeViewProvider;
 let foldingTreeViewProvider: FoldingTreeViewProvider;
 
-const refresh = (positions: vscode.Position[] | undefined = undefined) => {
-	if (timeout) {
-		clearTimeout(timeout);
-		timeout = undefined;
+const refreshRenamings = (positions: vscode.Position[] | undefined = undefined) => {
+	if (renamingTimeout) {
+		clearTimeout(renamingTimeout);
+		renamingTimeout = undefined;
 	}
-	timeout = setTimeout(() => {
+	renamingTimeout = setTimeout(() => {
 		const editor = vscode.window.activeTextEditor;
 		if (editor) {
-			ast.refresh(editor, positions);
+			ast.refreshRenamings(editor, positions);
 			localTreeViewProvider.refresh(editor?.document.uri);
-			foldingTreeViewProvider.refresh(editor?.document.uri);
 		}
 		globalTreeViewProvider.refresh();
+	}, 100);
+};
+
+const refreshFoldings = (visibleRanges: vscode.Range[] | undefined = undefined) => {
+	if (foldingTimeout) {
+		clearTimeout(foldingTimeout);
+		foldingTimeout = undefined;
+	}
+	foldingTimeout = setTimeout(async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
+			await updateEditorFoldingRanges(editor);
+			ast.refreshFoldings(editor, visibleRanges);
+			foldingTreeViewProvider.refresh(editor?.document.uri);
+		}
 	}, 100);
 };
 
@@ -96,7 +111,16 @@ const addFolding = async (editor: vscode.TextEditor, initialMin?: number, initia
 	if (!endInput) return;
 	const end = parseInt(endInput) - 1;
 	const foldingConfiguration = new FoldingConfiguration(start, end, "*** Message ***");
+	const foldings = await configuration.getFoldings(editor.document.uri);
+	if (foldings)
+		await Object.values(foldings).filter(f => f.start === start).forEach(async f => await configuration.removeFolding(editor.document.uri, f));
 	await configuration.updateFolding(editor.document.uri, foldingConfiguration);
+	await updateEditorFoldingRanges(editor);
+	await vscode.commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start] });
+	return foldingConfiguration;
+};
+
+const updateEditorFoldingRanges = async (editor: vscode.TextEditor) => {
 	const foldings = await configuration.getFoldings(editor.document.uri);
 	if (foldings) {
 		await vscode.languages.registerFoldingRangeProvider(SUPPORTED_LANGUAGES, {
@@ -109,10 +133,8 @@ const addFolding = async (editor: vscode.TextEditor, initialMin?: number, initia
 				return result;
 			}
 		});
-		await vscode.commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start] });
 	}
-	return foldingConfiguration;
-};
+}
 
 
 
@@ -121,22 +143,34 @@ export function activate(context: vscode.ExtensionContext) {
 	localTreeViewProvider = new RenamingTreeViewProvider(false);
 	foldingTreeViewProvider = new FoldingTreeViewProvider();
 
-	vscode.window.onDidChangeActiveTextEditor(() => refresh(), null, context.subscriptions);
-	vscode.window.onDidChangeTextEditorSelection((event) => refresh(event.selections.length > 0 ? getPositionRanges(event.selections[0].start, event.selections[0].end) : []), null, context.subscriptions);
-	vscode.workspace.onDidChangeConfiguration((event) => { event.affectsConfiguration("adverb") && refresh() });
-	vscode.workspace.onDidChangeTextDocument(
-		(event) => {
-			const editor = vscode.window.activeTextEditor;
-			if (!editor || event.document !== editor.document)
-				return;
+	vscode.window.onDidChangeActiveTextEditor(() => {
+		refreshRenamings();
+		refreshFoldings();
+	}, null, context.subscriptions);
+	vscode.window.onDidChangeTextEditorSelection((event) => {
+		refreshRenamings(event.selections.length > 0 ? getPositionRanges(event.selections[0].start, event.selections[0].end) : []);
+		refreshFoldings();
+	}, null, context.subscriptions);
+	vscode.window.onDidChangeTextEditorVisibleRanges((event: vscode.TextEditorVisibleRangesChangeEvent) => {
+		refreshFoldings(event.visibleRanges as vscode.Range[]);
+	});
+	vscode.workspace.onDidChangeConfiguration((event) => {
+		if (event.affectsConfiguration("adverb")) {
+			refreshRenamings();
+			refreshFoldings();
+		}
+	}, null, context.subscriptions);
+	vscode.workspace.onDidChangeTextDocument((event) => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor || event.document !== editor.document)
+			return;
 
-			if (event.contentChanges.length === 1)
-				refresh([event.contentChanges[0].range.start]);
-			else
-				refresh();
-		},
-		null, context.subscriptions
-	);
+		if (event.contentChanges.length === 1)
+			refreshRenamings([event.contentChanges[0].range.start]);
+		else
+			refreshRenamings();
+		refreshFoldings();
+	}, null, context.subscriptions);
 
 	vscode.commands.registerCommand("adverb.rename", async () => {
 		const editor = vscode.window.activeTextEditor;
@@ -179,7 +213,7 @@ export function activate(context: vscode.ExtensionContext) {
 				else
 					update = await configuration.updateLocalRenaming(editor.document.uri, originalName, renamingConfiguration);
 				if (update) {
-					refresh();
+					refreshRenamings();
 					vscode.window.showInformationMessage(`'${originalName}' successfully renamed to '${newName}'.`);
 				}
 			}
@@ -204,7 +238,7 @@ export function activate(context: vscode.ExtensionContext) {
 			else
 				update = await configuration.updateLocalFileRenaming(editor.document.uri, renamingType);
 			if (update) {
-				refresh();
+				refreshRenamings();
 				vscode.window.showInformationMessage(`All symbols successfully renamed.`);
 			}
 		}
@@ -217,7 +251,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const result = await addFolding(editor);
 		if (result)
 			vscode.window.showInformationMessage(`Folding [${result.start + 1}-${result.end + 1}] successfully added.`);
-		refresh();
+		refreshFoldings();
 	});
 
 	// TREEVIEW
@@ -232,7 +266,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (!editor)
 			return;
 
-		localTreeViewProvider.refresh(editor.document.uri);
+		refreshRenamings();
 	});
 	vscode.commands.registerCommand("adverb.globalEditRenaming", async (node: RenamingTreeItem) => {
 		const value = await configuration.getGlobalRenaming(node.originalName);
@@ -242,7 +276,7 @@ export function activate(context: vscode.ExtensionContext) {
 				value.newName = newName;
 				const update = await configuration.updateGlobalRenaming(node.originalName, value);
 				if (update) {
-					refresh();
+					refreshRenamings();
 					vscode.window.showInformationMessage(`'${value.originalName}' successfully updated to '${newName}'.`);
 				}
 			}
@@ -262,7 +296,7 @@ export function activate(context: vscode.ExtensionContext) {
 				value.newName = newName;
 				const update = await configuration.updateLocalRenaming(editor.document.uri, node.originalName, value);
 				if (update) {
-					refresh();
+					refreshRenamings();
 					vscode.window.showInformationMessage(`'${value.originalName}' successfully updated to '${newName}'.`);
 				}
 			}
@@ -282,7 +316,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 
-		refresh();
+		refreshRenamings();
 	});
 	vscode.commands.registerCommand("adverb.localDeleteRenaming", async (node: RenamingTreeItem) => {
 		const editor = vscode.window.activeTextEditor;
@@ -291,7 +325,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		await deleteLocalRenaming(editor, node.originalName);
 
-		refresh();
+		refreshRenamings();
 	});
 	vscode.commands.registerCommand("adverb.localActuallyRename", async (node: RenamingTreeItem) => {
 		const editor = vscode.window.activeTextEditor;
@@ -313,12 +347,12 @@ export function activate(context: vscode.ExtensionContext) {
 						while (position) {
 							await vscode.commands.executeCommand<vscode.WorkspaceEdit>("vscode.executeDocumentRenameProvider", editor.document.uri, position, node.newName).then(async (edit) => {
 								if (edit?.size && edit.size > 0)
-									vscode.workspace.applyEdit(edit);
+									await vscode.workspace.applyEdit(edit);
 							});
 							position = ast.getSymbolPosition(editor, node.originalName);
 						}
 						await deleteLocalRenaming(editor, node.originalName);
-						refresh();
+						refreshRenamings();
 					}
 				}
 			});
@@ -332,7 +366,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (!editor)
 			return;
 
-		foldingTreeViewProvider.refresh(editor.document.uri);
+		refreshFoldings();
 	});
 	vscode.commands.registerCommand("adverb.expandAllFoldings", async () => {
 		const editor = vscode.window.activeTextEditor;
@@ -368,7 +402,7 @@ export function activate(context: vscode.ExtensionContext) {
 				await configuration.removeFolding(editor.document.uri, node);
 				vscode.window.showInformationMessage(`Folding [${result.start + 1}-${result.end + 1}] successfully updated.`);
 			}
-			refresh();
+			refreshFoldings();
 		}
 	});
 	vscode.commands.registerCommand("adverb.deleteFolding", async (node: FoldingTreeItem) => {
@@ -379,11 +413,12 @@ export function activate(context: vscode.ExtensionContext) {
 		const result = await configuration.removeFolding(editor.document.uri, node);
 		if (result) {
 			vscode.window.showInformationMessage(`Folding [${node.start + 1}-${node.end + 1}] successfully removed.`);
-			refresh();
+			refreshFoldings();
 		}
 	});
 
-	refresh();
+	refreshRenamings();
+	refreshFoldings();
 }
 
 export function deactivate() { }

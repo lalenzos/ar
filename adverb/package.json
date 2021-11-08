@@ -11,7 +11,13 @@
 	],
 	"activationEvents": [
 		"onCommand:adverb.rename",
-		"onView:adverb.renamings"
+		"onCommand:adverb.renameAll",
+		"onCommand:adverb.fold",
+		"onLanguage:javascript",
+		"onLanguage:typescript",
+		"onView:adverb.globalRenamings",
+		"onView:adverb.localRenamings",
+		"onView:adverb.foldings"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -140,6 +146,11 @@
 			{
 				"command": "adverb.renameAll",
 				"key": "ctrl+shift+f2",
+				"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+			},
+			{
+				"command": "adverb.fold",
+				"key": "alt+k",
 				"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
 			}
 		],
@@ -366,10 +377,10 @@
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
 		"@types/node": "^16.11.6",
-		"@types/vscode": "^1.61.0",
+		"@types/vscode": "^1.62.0",
 		"@typescript-eslint/eslint-plugin": "^5.1.0",
 		"@typescript-eslint/parser": "^5.1.0",
-		"eslint": "^8.1.0",
+		"eslint": "^8.2.0",
 		"typescript": "^4.4.4"
 	},
 	"dependencies": {

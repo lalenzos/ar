@@ -1,20 +1,25 @@
 import * as vscode from "vscode";
-import generate from "@babel/generator";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
-import { getRenamingTypes, Renaming } from "./models";
+import { Folding, getRenamingTypes, Renaming } from "./models";
 import configuration from "./configuration";
 import { SUPPORTED_LANGUAGES } from "./extension";
 
-const hideDecorationType = vscode.window.createTextEditorDecorationType({
+const renamingHideDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor("editor.background"),
+    color: new vscode.ThemeColor("editor.background"),
+    letterSpacing: "-100em"
+});
+const foldingHideDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor("editor.background"),
     color: new vscode.ThemeColor("editor.background"),
     letterSpacing: "-100em"
 });
 const renamingDecorationType = vscode.window.createTextEditorDecorationType({});
+const foldingDecorationType = vscode.window.createTextEditorDecorationType({});
 
-const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedPositions: vscode.Position[] | undefined = undefined) => {
+const refreshRenamings = async (editor: vscode.TextEditor | undefined, currentlySelectedPositions: vscode.Position[] | undefined = undefined) => {
     if (editor) {
         const result: Renaming[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
@@ -62,11 +67,44 @@ const refresh = async (editor: vscode.TextEditor | undefined, currentlySelectedP
         }
 
         //Hide original identifiers
-        editor.setDecorations(hideDecorationType, result);
+        editor.setDecorations(renamingHideDecorationType, result);
 
         //"Rename" original identifier by adding the "new" name as annotation
         const annotations = result.map(i => createAnnotation(i.newName, i.range));
         editor.setDecorations(renamingDecorationType, annotations);
+    }
+};
+
+const refreshFoldings = async (editor: vscode.TextEditor | undefined, visibleRanges: vscode.Range[] | undefined = undefined) => {
+    if (editor) {
+        const result: Folding[] = [];
+        if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
+            const foldings = await configuration.getFoldings(editor.document.uri);
+            if (foldings) {
+                const visibleRows: Set<number> = new Set<number>();
+                if (!visibleRanges)
+                    visibleRanges = editor.visibleRanges;
+                visibleRanges.forEach(r => {
+                    let start = r.start.line;
+                    while (start <= r.end.line) {
+                        visibleRows.add(start);
+                        start += 1;
+                    }
+                });
+                Object.values(foldings).forEach(f => {
+                    const range = editor.document.lineAt(f.start).range;
+                    if (!visibleRows.has(f.start + 1))
+                        result.push(new Folding(range, `🚩 ${f.message} [${f.start + 1}-${f.end + 1}]`));
+                });
+            }
+        }
+
+        //Hide start line of folding section
+        editor.setDecorations(foldingHideDecorationType, result);
+
+        //Show summary of folding
+        const annotations = result.map(i => createAnnotation(i.message, i.range));
+        editor.setDecorations(foldingDecorationType, annotations);
     }
 };
 
@@ -89,41 +127,6 @@ const getSymbolPosition = (editor: vscode.TextEditor | undefined, name: string):
     }
     return result;
 };
-
-// const renameCode = async (editor: vscode.TextEditor | undefined, rename?: string): Promise<string | undefined> => {
-//     if (editor) {
-//         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-//             const renamingTypes = getRenamingTypes();
-//             const fileConfig = await configuration.getLocalConfiguration(editor.document.uri)
-//             if (fileConfig) {
-//                 const renamings = fileConfig.renamings;
-//                 const originalNames: string[] = renamings ? Object.keys(renamings) : [];
-//                 const ast = parse(editor.document.getText());
-//                 if (!ast)
-//                     return undefined;
-//                 traverse(ast, {
-//                     enter(path) {
-//                         if (path.isIdentifier()) {
-//                             if (!rename && !originalNames.includes(path.node.name)) {
-//                                 const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming);
-//                                 if (renamingType?.getNewNameFunction) {
-//                                     const newName = renamingType.getNewNameFunction(path.node.name);
-//                                     if (newName)
-//                                         path.node.name = newName;
-//                                 }
-//                             } else if (rename === path.node.name) {
-//                                 const renaming = renamings![path.node.name]!;
-//                                 path.node.name = renaming.newName;
-//                             }
-//                         }
-//                     }
-//                 });
-//                 return generate(ast).code;
-//             }
-//         }
-//     }
-//     return undefined;
-// };
 
 const createAnnotation = (content: string, range: vscode.Range) => {
     const backgroundColor: string | undefined = vscode.workspace.getConfiguration("adverb").get("backgroundColor");
@@ -212,4 +215,4 @@ const parse = (code: string) => {
     }
 }
 
-export default { checkIfNameIsACodeSymbol, refresh, getSymbolPosition };
+export default { checkIfNameIsACodeSymbol, refreshFoldings, refreshRenamings, getSymbolPosition };

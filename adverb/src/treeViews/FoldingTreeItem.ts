@@ -5,7 +5,7 @@ export class FoldingTreeItem extends vscode.TreeItem {
     constructor(
         public start: number,
         public end: number,
-        public message: string | undefined,
+        public message: string
     ) {
         super(`[${start+1} - ${end+1}]`, vscode.TreeItemCollapsibleState.None);
         this.description = message;
