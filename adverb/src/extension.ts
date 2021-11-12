@@ -112,8 +112,12 @@ const addFolding = async (editor: vscode.TextEditor, initialMin?: number, initia
 	const end = parseInt(endInput) - 1;
 	const foldingConfiguration = new FoldingConfiguration(start, end, "*** Message ***");
 	const foldings = await configuration.getFoldings(editor.document.uri);
-	if (foldings)
-		await Object.values(foldings).filter(f => f.start === start).forEach(async f => await configuration.removeFolding(editor.document.uri, f));
+	if (foldings) {
+		const equalFoldings = Object.values(foldings).filter(f => f.start === start);
+		for (const f of equalFoldings)
+			await configuration.removeFolding(editor.document.uri, f);
+			
+	}
 	await configuration.updateFolding(editor.document.uri, foldingConfiguration);
 	await updateEditorFoldingRanges(editor);
 	await vscode.commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start] });
@@ -134,7 +138,39 @@ const updateEditorFoldingRanges = async (editor: vscode.TextEditor) => {
 			}
 		});
 	}
-}
+};
+
+const actuallyRename = async (node: RenamingTreeItem, global: boolean) => {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor)
+		return;
+	if (!SUPPORTED_LANGUAGES.includes(editor.document.languageId))
+		return;
+
+	vscode.window.showInformationMessage("Do you really want to rename the code symbol in the selected way?", ...["Yes", "No"])
+		.then(async (answer) => {
+			if (answer === "Yes") {
+				if (node.originalName === "all symbol names") {
+					vscode.window.showErrorMessage("Unfortunately, all symbol names cannot be renamed.");
+					return;
+				}
+
+				let position = ast.getSymbolPosition(editor, node.originalName);
+				if (position) {
+					while (position) {
+						await vscode.commands.executeCommand<vscode.WorkspaceEdit>("vscode.executeDocumentRenameProvider", editor.document.uri, position, node.newName).then(async (edit) => {
+							if (edit?.size && edit.size > 0)
+								await vscode.workspace.applyEdit(edit);
+						});
+						position = ast.getSymbolPosition(editor, node.originalName);
+					}
+					if (!global)
+						await deleteLocalRenaming(editor, node.originalName);
+					refreshRenamings();
+				}
+			}
+		});
+};
 
 
 
@@ -171,6 +207,17 @@ export function activate(context: vscode.ExtensionContext) {
 			refreshRenamings();
 		refreshFoldings();
 	}, null, context.subscriptions);
+	vscode.window.registerFileDecorationProvider({
+		async provideFileDecoration(uri) {
+			const config = await configuration.getMergedConfigurationForCurrentFile(uri);
+			if (config?.fileRenaming ||
+				(config?.foldings && Object.values(config?.foldings).length > 0) ||
+				(config?.renamings && Object.values(config?.renamings).length > 0)
+			)
+				return new vscode.FileDecoration("🚧");
+			return new vscode.FileDecoration();
+		}
+	})
 
 	vscode.commands.registerCommand("adverb.rename", async () => {
 		const editor = vscode.window.activeTextEditor;
@@ -318,6 +365,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 		refreshRenamings();
 	});
+	vscode.commands.registerCommand("adverb.globalActuallyRename", async (node: RenamingTreeItem) => {
+		actuallyRename(node, true)
+	});
 	vscode.commands.registerCommand("adverb.localDeleteRenaming", async (node: RenamingTreeItem) => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
@@ -328,34 +378,7 @@ export function activate(context: vscode.ExtensionContext) {
 		refreshRenamings();
 	});
 	vscode.commands.registerCommand("adverb.localActuallyRename", async (node: RenamingTreeItem) => {
-		const editor = vscode.window.activeTextEditor;
-		if (!editor)
-			return;
-		if (!SUPPORTED_LANGUAGES.includes(editor.document.languageId))
-			return;
-
-		vscode.window.showInformationMessage("Do you really want to rename the code symbol in the selected way?", ...["Yes", "No"])
-			.then(async (answer) => {
-				if (answer === "Yes") {
-					if (node.originalName === "all symbol names") {
-						vscode.window.showErrorMessage("Unfortunately, all symbol names cannot be renamed.");
-						return;
-					}
-
-					let position = ast.getSymbolPosition(editor, node.originalName);
-					if (position) {
-						while (position) {
-							await vscode.commands.executeCommand<vscode.WorkspaceEdit>("vscode.executeDocumentRenameProvider", editor.document.uri, position, node.newName).then(async (edit) => {
-								if (edit?.size && edit.size > 0)
-									await vscode.workspace.applyEdit(edit);
-							});
-							position = ast.getSymbolPosition(editor, node.originalName);
-						}
-						await deleteLocalRenaming(editor, node.originalName);
-						refreshRenamings();
-					}
-				}
-			});
+		actuallyRename(node, false)
 	});
 
 	// TREEVIEW

@@ -2,3 +2,7 @@
 - emojis
 - change code really
 - further renaming with techniques
+
+- file decorations (badges with smiley)
+- copy from global/local to local/global
+- add folding from treeview

@@ -73,7 +73,7 @@ const getMergedConfigurationForCurrentFile = async (uri: Uri): Promise<FileConfi
     const fileConfiguration = data.files ? data.files[key] : undefined;
     const configuration = new FileConfiguration();
     configuration.fileRenaming = fileConfiguration?.fileRenaming ? fileConfiguration.fileRenaming : data.global?.fileRenaming;
-    configuration.renamings = Object.assign({}, data.global?.renamings, fileConfiguration?.renamings);
+    configuration.renamings = (data.global?.renamings && fileConfiguration?.renamings) ? Object.assign({}, data.global?.renamings, fileConfiguration?.renamings) : undefined;
     configuration.foldings = fileConfiguration?.foldings;
     return configuration;
 };

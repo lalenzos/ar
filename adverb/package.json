@@ -25,20 +25,21 @@
 			{
 				"command": "adverb.rename",
 				"title": "Rename single symbol",
-				"category": "Adverb",
-				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				"category": "Adverb"
 			},
 			{
 				"command": "adverb.renameAll",
 				"title": "Rename all symbols",
-				"category": "Adverb",
-				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				"category": "Adverb"
 			},
 			{
 				"command": "adverb.fold",
 				"title": "Fold lines and show summary",
 				"category": "Adverb",
-				"enablement": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				"icon": {
+					"light": "resources/light/add.svg",
+					"dark": "resources/dark/add.svg"
+				}
 			},
 			{
 				"command": "adverb.globalRefreshRenamings",
@@ -62,6 +63,14 @@
 				"icon": {
 					"light": "resources/light/trash.svg",
 					"dark": "resources/dark/trash.svg"
+				}
+			},
+			{
+				"command": "adverb.globalActuallyRename",
+				"title": "Actually rename",
+				"icon": {
+					"light": "resources/light/rename.svg",
+					"dark": "resources/dark/rename.svg"
 				}
 			},
 			{
@@ -201,6 +210,11 @@
 					"group": "navigation"
 				},
 				{
+					"command": "adverb.fold",
+					"when": "view == adverb.foldings",
+					"group": "navigation"
+				},
+				{
 					"command": "adverb.refreshFoldings",
 					"when": "view == adverb.foldings",
 					"group": "navigation"
@@ -217,6 +231,11 @@
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "adverb.globalActuallyRename",
+					"when": "view == adverb.globalRenamings",
+					"group": "inline"
+				},
 				{
 					"command": "adverb.globalDeleteRenaming",
 					"when": "view == adverb.globalRenamings",
@@ -376,16 +395,16 @@
 	"devDependencies": {
 		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^16.11.6",
+		"@types/node": "^16.11.7",
 		"@types/vscode": "^1.62.0",
-		"@typescript-eslint/eslint-plugin": "^5.1.0",
-		"@typescript-eslint/parser": "^5.1.0",
+		"@typescript-eslint/eslint-plugin": "^5.3.1",
+		"@typescript-eslint/parser": "^5.3.1",
 		"eslint": "^8.2.0",
 		"typescript": "^4.4.4"
 	},
 	"dependencies": {
-		"@babel/parser": "^7.16.2",
-		"@babel/traverse": "^7.16.0",
+		"@babel/parser": "^7.16.3",
+		"@babel/traverse": "^7.16.3",
 		"@babel/types": "^7.16.0",
 		"recast": "^0.20.5"
 	}
