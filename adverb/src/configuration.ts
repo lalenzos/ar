@@ -54,7 +54,7 @@ const getGlobalConfiguration = async (): Promise<GlobalConfiguration | undefined
     if (!data)
         return undefined;
     return data.global;
-}
+};
 
 const getLocalConfiguration = async (uri: Uri): Promise<FileConfiguration | undefined> => {
     const data = await _readConfiguration();
@@ -62,7 +62,7 @@ const getLocalConfiguration = async (uri: Uri): Promise<FileConfiguration | unde
         return undefined;
     const key = _getKey(uri);
     return data.files[key];
-}
+};
 
 const getMergedConfigurationForCurrentFile = async (uri: Uri): Promise<FileConfiguration | undefined> => {
     const data = await _readConfiguration();
@@ -73,7 +73,7 @@ const getMergedConfigurationForCurrentFile = async (uri: Uri): Promise<FileConfi
     const fileConfiguration = data.files ? data.files[key] : undefined;
     const configuration = new FileConfiguration();
     configuration.fileRenaming = fileConfiguration?.fileRenaming ? fileConfiguration.fileRenaming : data.global?.fileRenaming;
-    configuration.renamings = (data.global?.renamings && fileConfiguration?.renamings) ? Object.assign({}, data.global?.renamings, fileConfiguration?.renamings) : undefined;
+    configuration.renamings = (data.global?.renamings && fileConfiguration?.renamings) ? Object.assign({}, data.global?.renamings, fileConfiguration?.renamings) : (data.global?.renamings ? data.global?.renamings : fileConfiguration?.renamings);
     configuration.foldings = fileConfiguration?.foldings;
     return configuration;
 };
@@ -83,7 +83,7 @@ const getGlobalRenaming = async (key: string): Promise<RenamingConfiguration | u
     if (!config || !config.renamings)
         return undefined;
     return config.renamings[key];
-}
+};
 
 const getRenaming = async (uri: Uri, key: string): Promise<RenamingConfiguration | undefined> => {
     const config = await getMergedConfigurationForCurrentFile(uri);

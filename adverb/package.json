@@ -10,7 +10,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:adverb.rename",
+		"onCommand:adverb.renameSingle",
 		"onCommand:adverb.renameAll",
 		"onCommand:adverb.fold",
 		"onLanguage:javascript",
@@ -23,7 +23,7 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "adverb.rename",
+				"command": "adverb.renameSingle",
 				"title": "Rename single symbol",
 				"category": "Adverb"
 			},
@@ -148,7 +148,7 @@
 		],
 		"keybindings": [
 			{
-				"command": "adverb.rename",
+				"command": "adverb.renameSingle",
 				"key": "shift+f2",
 				"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 			},
@@ -166,7 +166,7 @@
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "adverb.rename",
+					"command": "adverb.renameSingle",
 					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
 				},
@@ -183,7 +183,7 @@
 			],
 			"editor/context": [
 				{
-					"command": "adverb.rename",
+					"command": "adverb.renameSingle",
 					"group": "1_modification",
 					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 				},
@@ -393,14 +393,13 @@
 		"lint": "eslint src --ext ts"
 	},
 	"devDependencies": {
-		"@types/babel__generator": "^7.6.3",
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^16.11.7",
+		"@types/node": "^16.11.9",
 		"@types/vscode": "^1.62.0",
-		"@typescript-eslint/eslint-plugin": "^5.3.1",
-		"@typescript-eslint/parser": "^5.3.1",
-		"eslint": "^8.2.0",
-		"typescript": "^4.4.4"
+		"@typescript-eslint/eslint-plugin": "^5.4.0",
+		"@typescript-eslint/parser": "^5.4.0",
+		"eslint": "^8.3.0",
+		"typescript": "^4.5.2"
 	},
 	"dependencies": {
 		"@babel/parser": "^7.16.3",

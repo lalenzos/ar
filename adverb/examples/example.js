@@ -16,4 +16,5 @@ console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCas
 
 method123("hallo");
 
+
 //# sourceMappingURL=example.js.map

@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
-import { Folding, getRenamingTypes, Renaming } from "./models";
 import configuration from "./configuration";
-import { SUPPORTED_LANGUAGES } from "./extension";
+import { Folding, getRenamingTypes, Renaming } from "./models";
+import { SUPPORTED_LANGUAGES } from "./utils";
 
 const renamingHideDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor("editor.background"),
