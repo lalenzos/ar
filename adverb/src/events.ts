@@ -7,6 +7,7 @@ import {
   window,
   workspace,
 } from "vscode";
+import ast from "./ast";
 import configuration from "./configuration";
 import { refreshRenamings, refreshFoldings } from "./utils";
 
@@ -23,15 +24,10 @@ export const registerEvents = (
   );
   window.onDidChangeTextEditorSelection(
     (event) => {
-      refreshRenamings(
-        event.selections.length > 0
-          ? getPositionRanges(
-              event.selections[0].start,
-              event.selections[0].end
-            )
-          : []
-      );
+      const selectedPositions = event.selections.length > 0 ? getPositionRanges(event.selections[0].start, event.selections[0].end) : [];
+      refreshRenamings(selectedPositions);
       refreshFoldings();
+      ast.highlightSymbolDefinitions(event.textEditor, selectedPositions);
     },
     null,
     context.subscriptions
@@ -87,6 +83,5 @@ const getPositionRanges = (start: Position, stop: Position): Position[] => {
 		b = new Position(b.line + 1, 0);
 		result.push(b);
 	}
-	result.push(stop);
 	return result;
 };

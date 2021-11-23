@@ -6,7 +6,7 @@ import {
   LocalRenamingTreeViewProvider,
   FoldingTreeViewProvider,
 } from "./treeViews";
-import { initialize, refreshFoldings, refreshRenamings } from "./utils";
+import { initialize, refreshFoldings, refreshRenamings, SUPPORTED_LANGUAGES } from "./utils";
 
 export function activate(context: vscode.ExtensionContext) {
   let globalTreeViewProvider = new GlobalRenamingTreeViewProvider();

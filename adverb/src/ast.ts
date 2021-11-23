@@ -1,25 +1,34 @@
-import * as vscode from "vscode";
+import { commands, DecorationInstanceRenderOptions, DecorationOptions, Location, Position, Range, TextEditor, ThemeColor, Uri, window, workspace } from "vscode";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
 import configuration from "./configuration";
 import { Folding, getRenamingTypes, Renaming } from "./models";
 import { SUPPORTED_LANGUAGES } from "./utils";
+import { Identifier } from "@babel/types";
 
-const renamingHideDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor("editor.background"),
-    color: new vscode.ThemeColor("editor.background"),
+const renamingHideDecorationType = window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor("editor.background"),
+    color: new ThemeColor("editor.background"),
     letterSpacing: "-100em"
 });
-const foldingHideDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor("editor.background"),
-    color: new vscode.ThemeColor("editor.background"),
+const foldingHideDecorationType = window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor("editor.background"),
+    color: new ThemeColor("editor.background"),
     letterSpacing: "-100em"
 });
-const renamingDecorationType = vscode.window.createTextEditorDecorationType({});
-const foldingDecorationType = vscode.window.createTextEditorDecorationType({});
+const renamingDecorationType = window.createTextEditorDecorationType({});
+const foldingDecorationType = window.createTextEditorDecorationType({});
+const highlightVisibleDefinitionsDecorationType = window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor("editor.wordHighlightBackground"),
+    borderColor: new ThemeColor("editor.wordHighlightBorder"),
+});
+const highlightNotVisibleDefinitionsDecorationType = window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor("editor.wordHighlightBackground"),
+    borderColor: new ThemeColor("editor.wordHighlightBorder")
+});
 
-const refreshRenamings = async (editor: vscode.TextEditor | undefined, currentlySelectedPositions: vscode.Position[] | undefined = undefined) => {
+const refreshRenamings = async (editor: TextEditor | undefined, currentlySelectedPositions: Position[] | undefined = undefined) => {
     if (editor) {
         const result: Renaming[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
@@ -37,9 +46,9 @@ const refreshRenamings = async (editor: vscode.TextEditor | undefined, currently
                             if (path.isIdentifier()) {
                                 if (fileConfig.fileRenaming || originalNames.includes(path.node.name)) {
                                     const loc = path.node.loc!;
-                                    const range: vscode.Range = new vscode.Range(
-                                        new vscode.Position(loc.start.line - 1, loc.start.column),
-                                        new vscode.Position(loc.end.line - 1, loc.end.column)
+                                    const range: Range = new Range(
+                                        new Position(loc.start.line - 1, loc.start.column),
+                                        new Position(loc.end.line - 1, loc.end.column)
                                     );
 
                                     if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
@@ -75,22 +84,13 @@ const refreshRenamings = async (editor: vscode.TextEditor | undefined, currently
     }
 };
 
-const refreshFoldings = async (editor: vscode.TextEditor | undefined, visibleRanges: vscode.Range[] | undefined = undefined) => {
+const refreshFoldings = async (editor: TextEditor | undefined, visibleRanges: Range[] | undefined = undefined) => {
     if (editor) {
         const result: Folding[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
             const foldings = await configuration.getFoldings(editor.document.uri);
             if (foldings) {
-                const visibleRows: Set<number> = new Set<number>();
-                if (!visibleRanges)
-                    visibleRanges = editor.visibleRanges;
-                visibleRanges.forEach(r => {
-                    let start = r.start.line;
-                    while (start <= r.end.line) {
-                        visibleRows.add(start);
-                        start += 1;
-                    }
-                });
+                const visibleRows = getVisibleRows(editor, visibleRanges);
                 Object.values(foldings).forEach(f => {
                     const range = editor.document.lineAt(f.start).range;
                     if (!visibleRows.has(f.start + 1))
@@ -108,8 +108,52 @@ const refreshFoldings = async (editor: vscode.TextEditor | undefined, visibleRan
     }
 };
 
-const getSymbolPosition = (editor: vscode.TextEditor | undefined, name: string): vscode.Position | undefined => {
-    let result: vscode.Position | undefined = undefined;
+const highlightSymbolDefinitions = async (editor: TextEditor | undefined, currentlySelectedPositions: Position[]) => {
+    if(editor && SUPPORTED_LANGUAGES.includes(editor.document.languageId)){
+        const ranges: [Range, Range][] = [];
+        for(let position of currentlySelectedPositions) {
+            const ast = parse(editor.document.getText());
+            if (!ast)
+                return;
+            const nodes: Identifier[] = [];
+            traverse(ast, {
+                enter(path) {
+                    if (path.isIdentifier() && path.node.loc && path.node.loc.start.line - 1 === position.line)
+                        nodes.push(path.node);
+            }});
+            for(let node of nodes) {
+                if(node.loc){
+                    const definitions = await commands.executeCommand<Location[]>("vscode.executeDefinitionProvider", editor.document.uri, new Position(node.loc.start.line - 1, node.loc.start.column));
+                    if(definitions) {
+                        for (let definition of definitions){
+                            const uri = (definition as any).targetUri as Uri;
+                            const range = (definition as any).targetSelectionRange as Range;
+                            if(!uri || !range?.start)
+                                continue;
+                            if (uri.path === editor.document.uri.path)
+                                if (range.start.line !== position.line)
+                                    ranges.push([new Range(new Position(node.loc.start.line - 1, node.loc.start.column), new Position(node.loc.end.line - 1, node.loc.end.column)), range]);
+                        }
+                    }
+                }
+            }
+        };
+        const visibleRows = getVisibleRows(editor, editor.visibleRanges);
+        const visibleRanges: Range[] = [];
+        const notVisibleRanges: DecorationOptions[] = [];
+        for(let range of ranges){
+            if(visibleRows.has(range[1].start.line))
+                visibleRanges.push(range[1]);
+            else
+                notVisibleRanges.push(createAnnotation(` [Definition at line ${range[1].start.line + 1}]`, range[0], "after"));
+        }
+        editor.setDecorations(highlightVisibleDefinitionsDecorationType, visibleRanges);
+        editor.setDecorations(highlightNotVisibleDefinitionsDecorationType, notVisibleRanges);
+    }
+}
+
+const getSymbolPosition = (editor: TextEditor | undefined, name: string): Position | undefined => {
+    let result: Position | undefined = undefined;
     if (editor) {
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
             const ast = parse(editor.document.getText());
@@ -118,7 +162,7 @@ const getSymbolPosition = (editor: vscode.TextEditor | undefined, name: string):
             traverse(ast, {
                 enter(path) {
                     if (path.isIdentifier() && path.node.name === name) {
-                        result = new vscode.Position(path.node.loc!.start.line - 1, path.node.loc!.start.column);
+                        result = new Position(path.node.loc!.start.line - 1, path.node.loc!.start.column);
                         path.stop();
                     }
                 }
@@ -128,32 +172,32 @@ const getSymbolPosition = (editor: vscode.TextEditor | undefined, name: string):
     return result;
 };
 
-const createAnnotation = (content: string, range: vscode.Range) => {
-    const backgroundColor: string | undefined = vscode.workspace.getConfiguration("adverb").get("backgroundColor");
-    const fontColor: string | undefined = vscode.workspace.getConfiguration("adverb").get("fontColor");
+const createAnnotation = (content: string, range: Range, position: "before" | "after" = "before") => {
+    const backgroundColor: string | undefined = workspace.getConfiguration("adverb").get("backgroundColor");
+    const fontColor: string | undefined = workspace.getConfiguration("adverb").get("fontColor");
     return {
         range,
         renderOptions: {
-            before: {
+            [position]: {
                 contentText: content,
-                backgroundColor: backgroundColor?.startsWith("#") ? new vscode.ThemeColor(backgroundColor) : backgroundColor,
-                fontColor: fontColor?.startsWith("#") ? new vscode.ThemeColor(fontColor) : fontColor,
-                fontStyle: vscode.workspace.getConfiguration("adverb").get("fontStyle"),
-                fontWeight: vscode.workspace.getConfiguration("adverb").get("fontWeight"),
+                backgroundColor: backgroundColor?.startsWith("#") ? new ThemeColor(backgroundColor) : backgroundColor,
+                fontColor: fontColor?.startsWith("#") ? new ThemeColor(fontColor) : fontColor,
+                fontStyle: workspace.getConfiguration("adverb").get("fontStyle"),
+                fontWeight: workspace.getConfiguration("adverb").get("fontWeight"),
                 textDecoration: `;
-                    font-size: ${vscode.workspace.getConfiguration("adverb").get("fontSize")};
-                    margin: ${vscode.workspace.getConfiguration("adverb").get("margin")};
-                    padding: ${vscode.workspace.getConfiguration("adverb").get("padding")};
-                    border-radius: ${vscode.workspace.getConfiguration("adverb").get("borderRadius")};
-                    border: ${vscode.workspace.getConfiguration("adverb").get("border")};
+                    font-size: ${workspace.getConfiguration("adverb").get("fontSize")};
+                    margin: ${workspace.getConfiguration("adverb").get("margin")};
+                    padding: ${workspace.getConfiguration("adverb").get("padding")};
+                    border-radius: ${workspace.getConfiguration("adverb").get("borderRadius")};
+                    border: ${workspace.getConfiguration("adverb").get("border")};
                     vertical-align: middle;
                 `,
             },
-        } as vscode.DecorationInstanceRenderOptions,
-    } as vscode.DecorationOptions;
+        } as DecorationInstanceRenderOptions,
+    } as DecorationOptions;
 };
 
-const checkIfNameIsACodeSymbol = (editor: vscode.TextEditor, name: string): boolean => {
+const checkIfNameIsACodeSymbol = (editor: TextEditor, name: string): boolean => {
     let result = false;
     const ast = parse(editor.document.getText());
     if (!ast)
@@ -166,6 +210,20 @@ const checkIfNameIsACodeSymbol = (editor: vscode.TextEditor, name: string): bool
     });
     return result;
 };
+
+const getVisibleRows = (editor: TextEditor, visibleRanges: Range[] | undefined = undefined): Set<number> => {
+    const visibleRows: Set<number> = new Set<number>();
+    if (!visibleRanges)
+        visibleRanges = editor.visibleRanges;
+        visibleRanges.forEach(r => {
+            let start = r.start.line;
+            while (start <= r.end.line) {
+                visibleRows.add(start);
+                start += 1;
+            }
+        });
+    return visibleRows;
+}
 
 const parse = (code: string) => {
     try {
@@ -215,4 +273,4 @@ const parse = (code: string) => {
     }
 }
 
-export default { checkIfNameIsACodeSymbol, refreshFoldings, refreshRenamings, getSymbolPosition };
+export default { checkIfNameIsACodeSymbol, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };
