@@ -8,9 +8,7 @@ import {
   window,
 } from "vscode";
 
-export abstract class BaseTreeViewProvider<TreeItem>
-  implements TreeDataProvider<TreeItem>, Disposable
-{
+export abstract class BaseTreeViewProvider<TreeItem> implements TreeDataProvider<TreeItem>, Disposable {
   protected _onDidChangeTreeData = new EventEmitter<TreeItem | undefined>();
   get onDidChangeTreeData(): Event<TreeItem | undefined> {
     return this._onDidChangeTreeData.event;

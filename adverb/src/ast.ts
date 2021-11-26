@@ -6,6 +6,7 @@ import configuration from "./configuration";
 import { Folding, getRenamingTypes, Renaming } from "./models";
 import { SUPPORTED_LANGUAGES } from "./utils";
 import { Identifier } from "@babel/types";
+import { Settings } from "./settings";
 
 const renamingHideDecorationType = window.createTextEditorDecorationType({
     backgroundColor: new ThemeColor("editor.background"),
@@ -109,9 +110,9 @@ const refreshFoldings = async (editor: TextEditor | undefined, visibleRanges: Ra
 };
 
 const highlightSymbolDefinitions = async (editor: TextEditor | undefined, currentlySelectedPositions: Position[]) => {
-    if(editor && SUPPORTED_LANGUAGES.includes(editor.document.languageId)){
+    if (editor && SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
         const ranges: [Range, Range][] = [];
-        for(let position of currentlySelectedPositions) {
+        for (let position of currentlySelectedPositions) {
             const ast = parse(editor.document.getText());
             if (!ast)
                 return;
@@ -120,19 +121,30 @@ const highlightSymbolDefinitions = async (editor: TextEditor | undefined, curren
                 enter(path) {
                     if (path.isIdentifier() && path.node.loc && path.node.loc.start.line - 1 === position.line)
                         nodes.push(path.node);
-            }});
-            for(let node of nodes) {
-                if(node.loc){
-                    const definitions = await commands.executeCommand<Location[]>("vscode.executeDefinitionProvider", editor.document.uri, new Position(node.loc.start.line - 1, node.loc.start.column));
-                    if(definitions) {
-                        for (let definition of definitions){
+                }
+            });
+            for (let node of nodes) {
+                if (node.loc) {
+                    const definitions = await commands.executeCommand<Location[]>(
+                        "vscode.executeDefinitionProvider",
+                        editor.document.uri,
+                        new Position(node.loc.start.line - 1, node.loc.start.column)
+                    );
+                    if (definitions) {
+                        for (let definition of definitions) {
                             const uri = (definition as any).targetUri as Uri;
                             const range = (definition as any).targetSelectionRange as Range;
-                            if(!uri || !range?.start)
+                            if (!uri || !range?.start)
                                 continue;
                             if (uri.path === editor.document.uri.path)
                                 if (range.start.line !== position.line)
-                                    ranges.push([new Range(new Position(node.loc.start.line - 1, node.loc.start.column), new Position(node.loc.end.line - 1, node.loc.end.column)), range]);
+                                    ranges.push([
+                                        new Range(
+                                            new Position(node.loc.start.line - 1, node.loc.start.column),
+                                            new Position(node.loc.end.line - 1, node.loc.end.column)
+                                        ),
+                                        range
+                                    ]);
                         }
                     }
                 }
@@ -141,8 +153,8 @@ const highlightSymbolDefinitions = async (editor: TextEditor | undefined, curren
         const visibleRows = getVisibleRows(editor, editor.visibleRanges);
         const visibleRanges: Range[] = [];
         const notVisibleRanges: DecorationOptions[] = [];
-        for(let range of ranges){
-            if(visibleRows.has(range[1].start.line))
+        for (let range of ranges) {
+            if (visibleRows.has(range[1].start.line))
                 visibleRanges.push(range[1]);
             else
                 notVisibleRanges.push(createAnnotation(` [Definition at line ${range[1].start.line + 1}]`, range[0], "after"));
@@ -173,23 +185,21 @@ const getSymbolPosition = (editor: TextEditor | undefined, name: string): Positi
 };
 
 const createAnnotation = (content: string, range: Range, position: "before" | "after" = "before") => {
-    const backgroundColor: string | undefined = workspace.getConfiguration("adverb").get("backgroundColor");
-    const fontColor: string | undefined = workspace.getConfiguration("adverb").get("fontColor");
     return {
         range,
         renderOptions: {
             [position]: {
                 contentText: content,
-                backgroundColor: backgroundColor?.startsWith("#") ? new ThemeColor(backgroundColor) : backgroundColor,
-                fontColor: fontColor?.startsWith("#") ? new ThemeColor(fontColor) : fontColor,
-                fontStyle: workspace.getConfiguration("adverb").get("fontStyle"),
-                fontWeight: workspace.getConfiguration("adverb").get("fontWeight"),
+                backgroundColor: Settings.getBackgroundColor(),
+                fontColor: Settings.getFontColor(),
+                fontStyle: Settings.getFontStyle(),
+                fontWeight: Settings.getFontWeight(),
                 textDecoration: `;
-                    font-size: ${workspace.getConfiguration("adverb").get("fontSize")};
-                    margin: ${workspace.getConfiguration("adverb").get("margin")};
-                    padding: ${workspace.getConfiguration("adverb").get("padding")};
-                    border-radius: ${workspace.getConfiguration("adverb").get("borderRadius")};
-                    border: ${workspace.getConfiguration("adverb").get("border")};
+                    font-size: ${Settings.getFontSize()};
+                    margin: ${Settings.getMargin()};
+                    padding: ${Settings.getPadding()};
+                    border-radius: ${Settings.getBorderRadius()};
+                    border: ${Settings.getBorder()};
                     vertical-align: middle;
                 `,
             },
@@ -215,13 +225,13 @@ const getVisibleRows = (editor: TextEditor, visibleRanges: Range[] | undefined =
     const visibleRows: Set<number> = new Set<number>();
     if (!visibleRanges)
         visibleRanges = editor.visibleRanges;
-        visibleRanges.forEach(r => {
-            let start = r.start.line;
-            while (start <= r.end.line) {
-                visibleRows.add(start);
-                start += 1;
-            }
-        });
+    visibleRanges.forEach(r => {
+        let start = r.start.line;
+        while (start <= r.end.line) {
+            visibleRows.add(start);
+            start += 1;
+        }
+    });
     return visibleRows;
 }
 

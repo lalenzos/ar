@@ -310,15 +310,40 @@
 			{
 				"title": "Adverb",
 				"properties": {
-					"adverb.enabled": {
+					"adverb.localRenamingEnabled": {
 						"type": "boolean",
-						"description": "Renaming enabled",
+						"description": "Local Renaming enabled",
 						"default": true
 					},
-					"adverb.treeViewEnabled": {
+					"adverb.globalRenamingEnabled": {
 						"type": "boolean",
-						"description": "Tree view (sidebar) enabled",
+						"description": "Global Renaming enabled",
 						"default": true
+					},
+					"adverb.foldingEnabled": {
+						"type": "boolean",
+						"description": "Folding enabled",
+						"default": true
+					},
+					"adverb.treeViewsEnabled": {
+						"type": "boolean",
+						"description": "Tree views (sidebars) enabled",
+						"default": true
+					},
+					"adverb.fileDecorationsEnabled": {
+						"type": "boolean",
+						"description": "File decorations enabled",
+						"default": true
+					},
+					"adverb.backendUrl": {
+						"type": "string",
+						"description": "Backend url",
+						"default": "http://localhost:8080"
+					},
+					"adverb.summaryUrl": {
+						"type": "string",
+						"description": "Code summarization url",
+						"default": "/api/summary"
 					},
 					"adverb.fontWeight": {
 						"type": "string",
@@ -335,7 +360,7 @@
 							"800",
 							"900"
 						],
-						"description": "Font weight CSS property of renaming"
+						"description": "Font weight CSS property of renaming/folding"
 					},
 					"adverb.fontStyle": {
 						"type": "string",
@@ -345,42 +370,42 @@
 							"italic",
 							"inherit"
 						],
-						"description": "Font style CSS property of renaming"
+						"description": "Font style CSS property of renaming/folding"
 					},
 					"adverb.fontSize": {
 						"type": "string",
 						"default": "inherit",
-						"description": "Font size CSS property of renaming"
+						"description": "Font size CSS property of renaming/folding"
 					},
 					"adverb.margin": {
 						"type": "string",
 						"default": "none",
-						"description": "Margin CSS property of renaming"
+						"description": "Margin CSS property of renaming/folding"
 					},
 					"adverb.padding": {
 						"type": "string",
 						"default": "none",
-						"description": "Padding CSS property of renaming"
+						"description": "Padding CSS property of renaming/folding"
 					},
 					"adverb.borderRadius": {
 						"type": "string",
 						"default": "none",
-						"description": "Border radius CSS property of renaming"
+						"description": "Border radius CSS property of renaming/folding"
 					},
 					"adverb.border": {
 						"type": "string",
 						"default": "none",
-						"description": "Border CSS property of renaming"
+						"description": "Border CSS property of renaming/folding"
 					},
 					"adverb.backgroundColor": {
 						"type": "string",
 						"defaults": "inherit",
-						"description": "Background color CSS property of renaming"
+						"description": "Background color CSS property of renaming/folding"
 					},
 					"adverb.fontColor": {
 						"type": "string",
 						"default": "inherit",
-						"description": "Font color CSS property of renaming"
+						"description": "Font color CSS property of renaming/folding"
 					}
 				}
 			}
@@ -394,7 +419,7 @@
 	},
 	"devDependencies": {
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^16.11.9",
+		"@types/node": "^16.11.10",
 		"@types/vscode": "^1.62.0",
 		"@typescript-eslint/eslint-plugin": "^5.4.0",
 		"@typescript-eslint/parser": "^5.4.0",
@@ -405,6 +430,7 @@
 		"@babel/parser": "^7.16.3",
 		"@babel/traverse": "^7.16.3",
 		"@babel/types": "^7.16.0",
+		"axios": "^0.24.0",
 		"recast": "^0.20.5"
 	}
 }

@@ -11,21 +11,6 @@ else
     exit
 fi
 
-# check the version of pythn
-echo Checking Python version...
-
-VERSION_OK=$(python3 versioncheck.py)
-
-if [ "$VERSION_OK" = "True" ]
-then
-    echo "Python version >= 3.6"
-else
-    echo "Python version < 3.6"
-    echo "Please install Pathon >= 3.6"
-    xdg-open https://www.python.org/downloads/
-    exit
-fi
-
 # setup virtual environment
 echo Creating virtual environment...
 python3 -m venv adverb-venv
@@ -35,11 +20,19 @@ echo Activating virtual environment...
 source adverb-venv/bin/activate
 echo Virtual environment activated...
 
+# install Rust for huggingface/transformers
+echo Installing Rust...
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 # install dependencies
 echo Installing dependencies...
 pip install -r requirements.txt
 echo Dependencies installed...
 
+# install pytorch
+echo Installing PyTorch...
+pip3 install torch torchvision torchaudio
+
 # start server
 echo Starting API-Server at http://localhost:8080
-python3 webservice.py
+./run.sh

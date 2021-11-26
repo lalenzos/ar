@@ -30,36 +30,24 @@ export class RenameSingleCommand extends Command {
     if (scope === undefined) return;
     const renamingTypes = getRenamingTypes();
     const items: string[] = renamingTypes.map((x) => x.description);
-    const result = await showQuickPick(
-      `Choose a new name or a renaming technique for '${originalName}':`,
-      items
-    );
+    const result = await showQuickPick(`Choose a new name or a renaming technique for '${originalName}':`, items);
     const renamingType = renamingTypes.find((x) => x.description === result);
     if (renamingType) {
       let newName: string | undefined;
       if (renamingType.getNewNameFunction)
         newName = renamingType.getNewNameFunction(originalName);
-      else newName = await showInputDialog(originalName);
+      else
+        newName = await showInputDialog(originalName);
       if (newName && newName !== originalName) {
-        const renamingConfiguration: RenamingConfiguration =
-          new RenamingConfiguration(originalName, newName, renamingType.id);
+        const renamingConfiguration: RenamingConfiguration = new RenamingConfiguration(originalName, newName, renamingType.id);
         let update: boolean;
         if (scope)
-          update = await configuration.updateGlobalRenaming(
-            originalName,
-            renamingConfiguration
-          );
+          update = await configuration.updateGlobalRenaming(originalName, renamingConfiguration);
         else
-          update = await configuration.updateLocalRenaming(
-            editor.document.uri,
-            originalName,
-            renamingConfiguration
-          );
+          update = await configuration.updateLocalRenaming(editor.document.uri, originalName, renamingConfiguration);
         if (update) {
           refreshRenamings();
-          window.showInformationMessage(
-            `'${originalName}' successfully renamed to '${newName}'.`
-          );
+          window.showInformationMessage(`'${originalName}' successfully renamed to '${newName}'.`);
         }
       }
     }

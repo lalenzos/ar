@@ -1,13 +1,22 @@
+from flask import json
+from flask.wrappers import Request
 from transformers import RobertaTokenizer, T5ForConditionalGeneration
 
 class CodeSummaryController:
-    def get_summary(code: str):
-        tokenizer = RobertaTokenizer.from_pretrained('Salesforce/codet5-small')
-        model = T5ForConditionalGeneration.from_pretrained('Salesforce/codet5-small')
+    def get_summary(self, request: Request):
+        if not request.data:
+            return None
 
-        text = "def greet(user): print(f'hello <extra_id_0>!')"
+        data = json.loads(request.data)
+        text = data.get("content", "")
+        if not text:
+            return None
+            
+        tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
+        model = T5ForConditionalGeneration.from_pretrained("Salesforce/codet5-base")
+
         input_ids = tokenizer(text, return_tensors="pt").input_ids
-
-        # simply generate a single sequence
         generated_ids = model.generate(input_ids, max_length=10)
-        print(tokenizer.decode(generated_ids[0], skip_special_tokens=True))
+
+        result = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+        return {"result": result}

@@ -1,14 +1,13 @@
 import * as vscode from "vscode";
 import { FoldCommand, RenameAllCommand, RenameSingleCommand } from "./commands";
 import { registerEvents } from "./events";
-import {
-  GlobalRenamingTreeViewProvider,
-  LocalRenamingTreeViewProvider,
-  FoldingTreeViewProvider,
-} from "./treeViews";
-import { initialize, refreshFoldings, refreshRenamings, SUPPORTED_LANGUAGES } from "./utils";
+import { Settings } from "./settings";
+import { GlobalRenamingTreeViewProvider, LocalRenamingTreeViewProvider, FoldingTreeViewProvider } from "./treeViews";
+import { initialize, refreshFoldings, refreshRenamings } from "./utils";
 
 export function activate(context: vscode.ExtensionContext) {
+  Settings.readSettings();
+
   let globalTreeViewProvider = new GlobalRenamingTreeViewProvider();
   let localTreeViewProvider = new LocalRenamingTreeViewProvider();
   let foldingTreeViewProvider = new FoldingTreeViewProvider();
@@ -28,4 +27,4 @@ export function activate(context: vscode.ExtensionContext) {
   refreshFoldings();
 }
 
-export function deactivate() {}
+export function deactivate() { }

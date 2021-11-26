@@ -35,7 +35,6 @@ export class LocalRenamingTreeViewProvider extends BaseRenamingTreeViewProvider 
 			return;
 
 		await this.deleteRenaming(editor, node.originalName);
-
 		refreshRenamings();
   }
 
