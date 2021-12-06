@@ -1,5 +1,6 @@
 import axios from "axios";
-import { commands, TextEditor, window } from "vscode";
+import { resolve } from "path/posix";
+import { commands, ProgressLocation, TextEditor, window } from "vscode";
 import configuration from "../configuration";
 import { FoldingConfiguration } from "../models";
 import { Settings } from "../settings";
@@ -39,34 +40,40 @@ export class FoldCommand extends Command {
     });
     if (!endInput) return;
     const end = parseInt(endInput) - 1;
-    
-    let content: string = "";
-    for (let i = start; i <= end; i++) {
-      content += editor.document.lineAt(i).text + "\n";
-    }
-    await axios
-      .post(Settings.getSummaryApiUrl(), {
-        content: content,
-      })
-      .then(async (response: any) => {
-        const message = response.data["result"];
-        if (!message) return;
-        const foldingConfiguration = new FoldingConfiguration(start, end, message);
-        const foldings = await configuration.getFoldings(editor.document.uri);
-        if (foldings) {
-          const equalFoldings = Object.values(foldings).filter((f) => f.start === start);
-          for (const f of equalFoldings)
-            await configuration.removeFolding(editor.document.uri, f);
-        }
-        await configuration.updateFolding(editor.document.uri, foldingConfiguration);
-        await updateEditorFoldingRanges(editor);
-        await commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start], });
-        if (foldingConfiguration)
-          window.showInformationMessage(`Folding [${foldingConfiguration.start + 1}-${foldingConfiguration.end + 1} successfully added.`);
-        refreshFoldings();
-      })
-      .catch((error: any) => {
-        window.showErrorMessage("API request for code summary failed.");
-      });
+    window.withProgress({
+      location: ProgressLocation.Notification,
+      title: "Getting folding summary...",
+      cancellable: false
+    }, async () => {
+      let content: string = "";
+      for (let i = start; i <= end; i++) {
+        content += editor.document.lineAt(i).text + "\n";
+      }
+      await axios
+        .post(Settings.getSummaryApiUrl(), {
+          content: content,
+        })
+        .then(async (response: any) => {
+          const message = response.data["result"];
+          if (!message) return;
+          const foldingConfiguration = new FoldingConfiguration(start, end, message);
+          const foldings = await configuration.getFoldings(editor.document.uri);
+          if (foldings) {
+            const equalFoldings = Object.values(foldings).filter((f) => f.start === start);
+            for (const f of equalFoldings)
+              await configuration.removeFolding(editor.document.uri, f);
+          }
+          await configuration.updateFolding(editor.document.uri, foldingConfiguration);
+          await updateEditorFoldingRanges(editor);
+          await commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start], });
+          if (foldingConfiguration)
+            window.showInformationMessage(`Folding [${foldingConfiguration.start + 1}-${foldingConfiguration.end + 1} successfully added.`);
+          refreshFoldings();
+        })
+        .catch((error: any) => {
+          window.showErrorMessage("API request for code summary failed.");
+        });
+      return new Promise<void>(resolve => resolve());
+    });
   }
 }

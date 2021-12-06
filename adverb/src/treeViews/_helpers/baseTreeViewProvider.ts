@@ -2,7 +2,6 @@ import {
   Disposable,
   Event,
   EventEmitter,
-  ExtensionContext,
   TreeDataProvider,
   Uri,
   window,

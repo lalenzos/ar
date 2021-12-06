@@ -32,11 +32,11 @@ export class Settings {
 
   // ** BACKEND **
   static getBackendUrl(): string {
-    return Settings.configuration.get<string>("backendUrl", "http://localhost:8080");
+    return Settings.configuration.get<string>("backendUrl", "http://127.0.0.1:8080");
   }
 
   static getSummaryApiUrl(): string {
-    return Settings.configuration.get<string>("summaryUrl", this.getBackendUrl() + "/api/summary");
+    return this.getBackendUrl() + Settings.configuration.get<string>("summaryUrl", "/api/summary");
   }
 
 

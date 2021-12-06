@@ -150,34 +150,34 @@
 			{
 				"command": "adverb.renameSingle",
 				"key": "shift+f2",
-				"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
+				"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
 				"command": "adverb.renameAll",
 				"key": "ctrl+shift+f2",
-				"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript"
 			},
 			{
 				"command": "adverb.fold",
 				"key": "alt+k",
-				"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+				"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
 					"command": "adverb.renameSingle",
-					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
 				},
 				{
 					"command": "adverb.renameAll",
-					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
 				},
 				{
 					"command": "adverb.fold",
-					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript",
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript",
 					"group": "Adverb"
 				}
 			],
@@ -185,17 +185,17 @@
 				{
 					"command": "adverb.renameSingle",
 					"group": "1_modification",
-					"when": "config.adverb.enabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorTextFocus && editorLangId == javascript || editorLangId == typescript"
 				},
 				{
 					"command": "adverb.renameAll",
 					"group": "1_modification",
-					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript"
 				},
 				{
 					"command": "adverb.fold",
 					"group": "1_modification",
-					"when": "config.adverb.enabled && editorLangId == javascript || editorLangId == typescript"
+					"when": "config.adverb.globalRenamingEnabled || config.adverb.localRenamingEnabled && editorLangId == javascript || editorLangId == typescript"
 				}
 			],
 			"view/title": [
@@ -278,17 +278,17 @@
 				{
 					"id": "adverb.globalRenamings",
 					"name": "Adverb: Renamings (global)",
-					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
+					"when": "config.adverb.globalRenamingEnabled && config.adverb.treeViewsEnabled"
 				},
 				{
 					"id": "adverb.localRenamings",
 					"name": "Adverb: Renamings (local)",
-					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
+					"when": "config.adverb.localRenamingEnabled && config.adverb.treeViewsEnabled"
 				},
 				{
 					"id": "adverb.foldings",
 					"name": "Adverb: Foldings (local)",
-					"when": "config.adverb.enabled && config.adverb.treeViewEnabled"
+					"when": "config.adverb.foldingEnabled && config.adverb.treeViewsEnabled"
 				}
 			]
 		},
@@ -338,7 +338,7 @@
 					"adverb.backendUrl": {
 						"type": "string",
 						"description": "Backend url",
-						"default": "http://localhost:8080"
+						"default": "http://127.0.0.1:8080"
 					},
 					"adverb.summaryUrl": {
 						"type": "string",
@@ -419,15 +419,15 @@
 	},
 	"devDependencies": {
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^16.11.10",
+		"@types/node": "^16.11.11",
 		"@types/vscode": "^1.62.0",
-		"@typescript-eslint/eslint-plugin": "^5.4.0",
-		"@typescript-eslint/parser": "^5.4.0",
-		"eslint": "^8.3.0",
+		"@typescript-eslint/eslint-plugin": "^5.5.0",
+		"@typescript-eslint/parser": "^5.5.0",
+		"eslint": "^8.4.0",
 		"typescript": "^4.5.2"
 	},
 	"dependencies": {
-		"@babel/parser": "^7.16.3",
+		"@babel/parser": "^7.16.4",
 		"@babel/traverse": "^7.16.3",
 		"@babel/types": "^7.16.0",
 		"axios": "^0.24.0",
