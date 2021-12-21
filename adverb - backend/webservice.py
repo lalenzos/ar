@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from controllers.code_summary_controller import CodeSummaryController
+from controllers.code_symbol_controller import CodeSymbolController
 
 PORT = 8080
 global rootPath
@@ -15,14 +16,27 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # controllers
 code_summary = CodeSummaryController()
+code_symbol = CodeSymbolController()
 
 # API routes
 @app.route("/api/summary", methods = ["POST"])
-def api_models():
+def get_summary():
     try:
         summary = code_summary.get_summary(request)
         if summary:
             response = jsonify(summary)
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response
+    except:
+        pass
+    return "Bad request", "400"
+
+@app.route("/api/name", methods = ["POST"])
+def get_symbol_name():
+    try:
+        name = code_symbol.get_symbol_name(request)
+        if name:
+            response = jsonify(name)
             response.headers.add("Access-Control-Allow-Origin", "*")
             return response
     except:

@@ -24,6 +24,10 @@ export class Settings {
     return Settings.configuration.get<boolean>("treeViewsEnabled", true);
   }
 
+  static areCodeLensEnabled(): boolean {
+    return Settings.configuration.get<boolean>("codeLensEnabled", true);
+  }
+
   static areFileDecorationsEnabled(): boolean {
     return Settings.configuration.get<boolean>("fileDecorationsEnabled", true);
   }
@@ -37,6 +41,10 @@ export class Settings {
 
   static getSummaryApiUrl(): string {
     return this.getBackendUrl() + Settings.configuration.get<string>("summaryUrl", "/api/summary");
+  }
+
+  static getNameApiUrl(): string {
+    return this.getBackendUrl() + Settings.configuration.get<string>("nameUrl", "/api/name");
   }
 
 

@@ -1,11 +1,11 @@
-import { commands, DecorationInstanceRenderOptions, DecorationOptions, Location, Position, Range, TextEditor, ThemeColor, Uri, window, workspace } from "vscode";
+import { commands, DecorationInstanceRenderOptions, DecorationOptions, Location, Position, Range, TextDocument, TextEditor, ThemeColor, Uri, window, workspace } from "vscode";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
 import configuration from "./configuration";
 import { Folding, getRenamingTypes, Renaming } from "./models";
 import { SUPPORTED_LANGUAGES } from "./utils";
-import { Identifier } from "@babel/types";
+import { Identifier, SourceLocation } from "@babel/types";
 import { Settings } from "./settings";
 
 const renamingHideDecorationType = window.createTextEditorDecorationType({
@@ -47,11 +47,7 @@ const refreshRenamings = async (editor: TextEditor | undefined, currentlySelecte
                             if (path.isIdentifier()) {
                                 if (fileConfig.fileRenaming || originalNames.includes(path.node.name)) {
                                     const loc = path.node.loc!;
-                                    const range: Range = new Range(
-                                        new Position(loc.start.line - 1, loc.start.column),
-                                        new Position(loc.end.line - 1, loc.end.column)
-                                    );
-
+                                    const range: Range = getRangeFromLoc(loc);
                                     if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
                                         //skip this "renaming"
                                     } else {
@@ -128,7 +124,7 @@ const highlightSymbolDefinitions = async (editor: TextEditor | undefined, curren
                     const definitions = await commands.executeCommand<Location[]>(
                         "vscode.executeDefinitionProvider",
                         editor.document.uri,
-                        new Position(node.loc.start.line - 1, node.loc.start.column)
+                        getRangeFromLoc(node.loc).start
                     );
                     if (definitions) {
                         for (let definition of definitions) {
@@ -138,13 +134,7 @@ const highlightSymbolDefinitions = async (editor: TextEditor | undefined, curren
                                 continue;
                             if (uri.path === editor.document.uri.path)
                                 if (range.start.line !== position.line)
-                                    ranges.push([
-                                        new Range(
-                                            new Position(node.loc.start.line - 1, node.loc.start.column),
-                                            new Position(node.loc.end.line - 1, node.loc.end.column)
-                                        ),
-                                        range
-                                    ]);
+                                    ranges.push([getRangeFromLoc(node.loc), range]);
                         }
                     }
                 }
@@ -157,12 +147,35 @@ const highlightSymbolDefinitions = async (editor: TextEditor | undefined, curren
             if (visibleRows.has(range[1].start.line))
                 visibleRanges.push(range[1]);
             else
-                notVisibleRanges.push(createAnnotation(` [Definition at line ${range[1].start.line + 1}]`, range[0], "after"));
+                notVisibleRanges.push(createAnnotation(` [D-Line ${range[1].start.line + 1}]`, range[0], "after"));
         }
         editor.setDecorations(highlightVisibleDefinitionsDecorationType, visibleRanges);
         editor.setDecorations(highlightNotVisibleDefinitionsDecorationType, notVisibleRanges);
     }
-}
+};
+
+const getFunctionDeclarations = (document: TextDocument): Range[] => {
+    const ast = parse(document.getText());
+    if (!ast)
+        return [];
+    const ranges: Range[] = [];
+    traverse(ast, {
+        ArrowFunctionExpression: function (path) {
+            if (path.node.loc)
+                ranges.push(getRangeFromLoc(path.node.loc));
+        },
+        FunctionDeclaration: function (path) {
+            if (path.node.loc)
+                ranges.push(getRangeFromLoc(path.node.loc));
+        },
+        FunctionExpression: function (path) {
+            if (path.node.loc)
+                ranges.push(getRangeFromLoc(path.node.loc));
+        },
+    });
+    return ranges;
+};
+
 
 const getSymbolPosition = (editor: TextEditor | undefined, name: string): Position | undefined => {
     let result: Position | undefined = undefined;
@@ -221,6 +234,19 @@ const checkIfNameIsACodeSymbol = (editor: TextEditor, name: string): boolean => 
     return result;
 };
 
+const getBodyRangeOfFunctionSymbol = (editor: TextEditor, name: string): Range | undefined => {
+    const ast = parse(editor.document.getText());
+    if (!ast)
+        return undefined;
+    traverse(ast, {
+        enter(path) {
+            if (path.node.loc && (path.isArrayTypeAnnotation() || path.isFunctionDeclaration() || path.isFunctionExpression()))
+                return getRangeFromLoc(path.node.loc);
+        }
+    });
+    return undefined;
+};
+
 const getVisibleRows = (editor: TextEditor, visibleRanges: Range[] | undefined = undefined): Set<number> => {
     const visibleRows: Set<number> = new Set<number>();
     if (!visibleRanges)
@@ -233,7 +259,14 @@ const getVisibleRows = (editor: TextEditor, visibleRanges: Range[] | undefined =
         }
     });
     return visibleRows;
-}
+};
+
+const getRangeFromLoc = (loc: SourceLocation): Range => {
+    return new Range(
+        new Position(loc.start.line - 1, loc.start.column),
+        new Position(loc.end.line - 1, loc.end.column)
+    );
+};
 
 const parse = (code: string) => {
     try {
@@ -281,6 +314,6 @@ const parse = (code: string) => {
     } catch (error) {
         // console.log(error);
     }
-}
+};
 
-export default { checkIfNameIsACodeSymbol, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };
+export default { checkIfNameIsACodeSymbol, getFunctionDeclarations, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };

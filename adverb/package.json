@@ -330,6 +330,11 @@
 						"description": "Tree views (sidebars) enabled",
 						"default": true
 					},
+					"adverb.codeLensEnabled": {
+						"type": "boolean",
+						"description": "Code Lens enabled",
+						"default": true
+					},
 					"adverb.fileDecorationsEnabled": {
 						"type": "boolean",
 						"description": "File decorations enabled",
@@ -339,6 +344,11 @@
 						"type": "string",
 						"description": "Backend url",
 						"default": "http://127.0.0.1:8080"
+					},
+					"adverb.nameUrl": {
+						"type": "string",
+						"description": "Code name url",
+						"default": "/api/name"
 					},
 					"adverb.summaryUrl": {
 						"type": "string",

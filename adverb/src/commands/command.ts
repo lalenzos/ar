@@ -26,7 +26,7 @@ export abstract class Command implements Disposable {
     const editor = window.activeTextEditor;
     if (!editor || !SUPPORTED_LANGUAGES.includes(editor.document.languageId))
       return;
-    this.execute(editor)
+    this.execute(editor, ...args)
   }
 
   abstract execute(...args: any[]): any;

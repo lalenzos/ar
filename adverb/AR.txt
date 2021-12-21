@@ -1,8 +1,8 @@
-- folding (FoldingRange)
-- emojis
-- change code really
-- further renaming with techniques
+for functions: propose a renaming name using the summary from the model
 
-- file decorations (badges with smiley)
-- copy from global/local to local/global
-- add folding from treeview
+https://arxiv.org/pdf/2109.00859.pdf
+MASK: masked identifier prediction
+
+"<extra_id_0>"
+
+create automatically summaries and show them above (codelens)

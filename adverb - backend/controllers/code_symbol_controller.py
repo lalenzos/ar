@@ -2,8 +2,8 @@ from flask import json
 from flask.wrappers import Request
 from transformers import RobertaTokenizer, T5ForConditionalGeneration
 
-class CodeSummaryController:
-    def get_summary(self, request: Request):
+class CodeSymbolController:
+    def get_symbol_name(self, request: Request):
         if not request.data:
             return None
 
@@ -12,8 +12,8 @@ class CodeSummaryController:
         if not text:
             return None
             
-        tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base-multi-sum")
-        model = T5ForConditionalGeneration.from_pretrained("Salesforce/codet5-base-multi-sum")
+        tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
+        model = T5ForConditionalGeneration.from_pretrained("Salesforce/codet5-base")
 
         input_ids = tokenizer(text, return_tensors="pt").input_ids
         generated_ids = model.generate(input_ids, max_length=10)

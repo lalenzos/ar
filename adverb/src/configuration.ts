@@ -24,7 +24,7 @@ const _readConfiguration = async (): Promise<AdverbConfiguration | undefined> =>
         const json = new TextDecoder().decode(data);
         return JSON.parse(json) as AdverbConfiguration;
     } catch (err) {
-        console.log(err);
+        // console.log(err);
         return undefined;
     }
 };

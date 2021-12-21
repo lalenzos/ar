@@ -17,4 +17,9 @@ console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCas
 method123("hallo");
 
 
-//# sourceMappingURL=example.js.map
+var hirsch = null;
+hirsch = function(test){
+    console.log(test);
+    console.log("Hirsch", test);
+}
+hirsch("test");

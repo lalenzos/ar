@@ -1,6 +1,6 @@
 import {
   ExtensionContext,
-  FileDecoration,
+  languages,
   Position,
   Range,
   TextEditorVisibleRangesChangeEvent,
@@ -8,9 +8,10 @@ import {
   workspace,
 } from "vscode";
 import ast from "./ast";
-import configuration from "./configuration";
+import { MethodSummaryCodeLensProvider } from "./codeLens";
+import { ModifiedFileFileDecorationProvider } from "./fileDecorations";
 import { Settings } from "./settings";
-import { refreshRenamings, refreshFoldings } from "./utils";
+import { refreshRenamings, refreshFoldings, SUPPORTED_LANGUAGES } from "./utils";
 
 export const registerEvents = (context: ExtensionContext) => {
   window.onDidChangeActiveTextEditor(() => {
@@ -47,19 +48,8 @@ export const registerEvents = (context: ExtensionContext) => {
     refreshFoldings();
   }, null, context.subscriptions);
 
-  window.registerFileDecorationProvider({
-    async provideFileDecoration(uri) {
-      if (Settings.areFileDecorationsEnabled()) {
-        const config = await configuration.getMergedConfigurationForCurrentFile(uri);
-        if (config?.fileRenaming ||
-          (config?.foldings && Object.values(config?.foldings).length > 0) ||
-          (config?.renamings && Object.values(config?.renamings).length > 0)
-        )
-          return new FileDecoration("🚧");
-      }
-      return new FileDecoration();
-    }
-  })
+  languages.registerCodeLensProvider(SUPPORTED_LANGUAGES, new MethodSummaryCodeLensProvider());
+  window.registerFileDecorationProvider(new ModifiedFileFileDecorationProvider());
 };
 
 const getPositionRanges = (start: Position, stop: Position): Position[] => {
