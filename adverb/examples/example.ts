@@ -39,32 +39,3 @@ const formatDateTimeForExport = (value) => {
     }
     return "";
 };
-
-
-
-def <extra_id_0>(configuration, section, output, test_id, func):
-    result = []
-    plugin_list = configuration[section]["enabled_plugins"].split()    
-    plugin_base = PluginBase(package='plugins')
-    plugin_source = plugin_base.make_plugin_source(searchpath=['./plugins'])
-
-    for plugin_name in plugin_list:        
-        logging.debug(f"Executing {func} of plugin {plugin_name}.")
-        plugin = plugin_source.load_plugin(plugin_name)
-        try:
-            function_to_call = getattr(plugin, func, None)
-            if function_to_call!=None:
-                plugin_state = ", ".join(global_plugin_state.keys())
-                logging.debug(f"Current plugin state contains [{plugin_state}]")
-
-                call_result = function_to_call(global_plugin_state, configuration[section], output, test_id)
-                result.append(call_result)
-                
-        except Exception as e:
-            logging.critical(f"Cannot invoke plugin {plugin_name}: {e}")
-    
-    return result
-
-    
-
-console.log(new Date());

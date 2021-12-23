@@ -13,7 +13,7 @@ export class RenameAllCommand extends Command {
     const scope = await showScopePick();
     if (scope === undefined) return;
     const renamingTypes = getRenamingTypes();
-    const items: string[] = renamingTypes.filter((x) => x.onlyForSingleRenaming === false).map((x) => x.description);
+    let items: string[] = renamingTypes.filter((x) => x.onlyForSingleRenaming === false).map((x) => x.description);
     const result = await showQuickPick(`Choose a renaming technique for all symbols:`, items);
     const renamingType = renamingTypes.find((x) => x.description === result);
     if (renamingType) {

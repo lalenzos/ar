@@ -5,7 +5,7 @@ import * as recast from "recast";
 import configuration from "./configuration";
 import { Folding, getRenamingTypes, Renaming } from "./models";
 import { SUPPORTED_LANGUAGES } from "./utils";
-import { Identifier, SourceLocation } from "@babel/types";
+import { arrowFunctionExpression, functionExpression, Identifier, identifier, SourceLocation } from "@babel/types";
 import { Settings } from "./settings";
 
 const renamingHideDecorationType = window.createTextEditorDecorationType({
@@ -58,9 +58,10 @@ const refreshRenamings = async (editor: TextEditor | undefined, currentlySelecte
                                         } else {
                                             const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming)
                                             if (renamingType?.getNewNameFunction) {
-                                                const newName = renamingType.getNewNameFunction(path.node.name);
-                                                if (newName)
-                                                    result.push(new Renaming(path.node.name, newName, renamingType, range));
+                                                renamingType.getNewNameFunction(path.node.name, undefined).then((newName: string | undefined) => {
+                                                    if (newName)
+                                                        result.push(new Renaming(path.node.name, newName, renamingType, range));
+                                                });
                                             }
                                         }
                                     }
@@ -227,31 +228,41 @@ const checkIfNameIsACodeSymbol = (editor: TextEditor, name: string): boolean => 
         return result;
     traverse(ast, {
         enter(path) {
-            if (path.isIdentifier() && path.node.name === name)
+            if (path.isIdentifier() && path.node.name === name) {
                 result = true;
+                path.stop();
+            }
         }
     });
     return result;
 };
 
-const getBodyRangeOfFunctionSymbol = (editor: TextEditor, name: string): Range | undefined => {
+const getRangeOfFunctionSymbol = (editor: TextEditor, name: string): Range | undefined => {
+    let result: Range | undefined = undefined;
     const ast = parse(editor.document.getText());
     if (!ast)
-        return undefined;
+        return result;
     traverse(ast, {
         enter(path) {
-            if (path.node.loc && (path.isArrayTypeAnnotation() || path.isFunctionDeclaration() || path.isFunctionExpression()))
-                return getRangeFromLoc(path.node.loc);
+            if (path.isVariableDeclarator() && path.node.loc && path.node.id.type === "Identifier" && path.node.id?.name === name && path.node.init && (path.node.init.type === "ArrowFunctionExpression" || path.node.init.type === "FunctionExpression")) {
+                result = getRangeFromLoc(path.node.loc);
+                path.stop();
+            }
+            if (path.isFunctionDeclaration() && path.node.loc && path.node.id?.type === "Identifier" && path.node.id?.name === name) {
+                result = getRangeFromLoc(path.node.loc);
+                path.stop();
+            }
         }
     });
-    return undefined;
+    return result;
 };
 
-const getVisibleRows = (editor: TextEditor, visibleRanges: Range[] | undefined = undefined): Set<number> => {
+const getVisibleRows = (editor: TextEditor, visibleRanges: readonly Range[] | undefined = undefined): Set<number> => {
     const visibleRows: Set<number> = new Set<number>();
-    if (!visibleRanges)
-        visibleRanges = editor.visibleRanges;
-    visibleRanges.forEach(r => {
+    var _visibleRanges = visibleRanges;
+    if (!_visibleRanges)
+        _visibleRanges = editor.visibleRanges;
+    _visibleRanges.forEach(r => {
         let start = r.start.line;
         while (start <= r.end.line) {
             visibleRows.add(start);
@@ -316,4 +327,4 @@ const parse = (code: string) => {
     }
 };
 
-export default { checkIfNameIsACodeSymbol, getFunctionDeclarations, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };
+export default { checkIfNameIsACodeSymbol, getRangeOfFunctionSymbol, getFunctionDeclarations, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };

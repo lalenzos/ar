@@ -2,7 +2,7 @@ import { TextEditor, window } from "vscode";
 import ast from "../ast";
 import configuration from "../configuration";
 import { getRenamingTypes, RenamingConfiguration } from "../models";
-import { showScopePick, showQuickPick, showInputDialog, refreshRenamings } from "../utils";
+import { showScopePick, showQuickPick, showInputDialog, refreshRenamings, getCodeForRange } from "../utils";
 import { Command, Commands } from "./command";
 
 export class RenameSingleCommand extends Command {
@@ -28,15 +28,17 @@ export class RenameSingleCommand extends Command {
     }
     const scope = await showScopePick();
     if (scope === undefined) return;
+    const isFunction = ast.getRangeOfFunctionSymbol(editor, originalName);
     const renamingTypes = getRenamingTypes();
-    const items: string[] = renamingTypes.map((x) => x.description);
+    const items: string[] = (isFunction ? renamingTypes : renamingTypes.filter(x => x.onlyForFunctionNames === false)).map((x) => x.description);
     const result = await showQuickPick(`Choose a new name or a renaming technique for '${originalName}':`, items);
     const renamingType = renamingTypes.find((x) => x.description === result);
     if (renamingType) {
       let newName: string | undefined;
-      if (renamingType.getNewNameFunction)
-        newName = renamingType.getNewNameFunction(originalName);
-      else
+      if (renamingType.getNewNameFunction) {
+        const code = isFunction ? getCodeForRange(editor.document, isFunction) : undefined;
+        newName = await renamingType.getNewNameFunction(originalName, code);
+      } else
         newName = await showInputDialog(originalName);
       if (newName && newName !== originalName) {
         const renamingConfiguration: RenamingConfiguration = new RenamingConfiguration(originalName, newName, renamingType.id);

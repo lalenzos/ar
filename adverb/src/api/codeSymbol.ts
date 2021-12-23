@@ -2,7 +2,8 @@ import axios from "axios";
 import { window, ProgressLocation } from "vscode";
 import { Settings } from "../settings";
 
-export const getSymbolName = async (code: string, showProgress: boolean = false): Promise<string | undefined> => {
+export const getSymbolName = async (symbolName: string, code: string, showProgress: boolean = false): Promise<string | undefined> => {
+    code = code.replace(symbolName, "<extra_id_0>");
     return showProgress ?
         window.withProgress({
             location: ProgressLocation.Notification,
