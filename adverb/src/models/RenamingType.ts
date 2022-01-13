@@ -1,4 +1,3 @@
-import { Range } from "vscode";
 import { getCodeSummary, getSymbolName } from "../api";
 
 export class RenamingType {

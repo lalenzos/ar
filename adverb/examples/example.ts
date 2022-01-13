@@ -15,14 +15,13 @@ test123('Foo', 'bar', 1, 2, 3, 4);
 
 console.log('a', 'b', 'c', 'd', 'e');
 
+console.log("das ist ein test");
 
 function greet (userName) {
     console.log("Good morning " + userName);
 }
 
-
 console.log(anotherVariableThatHasAnExtremelyLongVariableNameForTestingOfEdgeCasesSinceWeAlsoLikeToConsiderLongVariableNames2);
-
 
 const formatDateTimeForExport = (value) => {
     if (value) {

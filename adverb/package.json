@@ -429,17 +429,17 @@
 	},
 	"devDependencies": {
 		"@types/babel__traverse": "^7.14.2",
-		"@types/node": "^17.0.4",
+		"@types/node": "^17.0.8",
 		"@types/vscode": "^1.63.1",
-		"@typescript-eslint/eslint-plugin": "^5.8.0",
-		"@typescript-eslint/parser": "^5.8.0",
-		"eslint": "^8.5.0",
+		"@typescript-eslint/eslint-plugin": "^5.9.1",
+		"@typescript-eslint/parser": "^5.9.1",
+		"eslint": "^8.6.0",
 		"typescript": "^4.5.4"
 	},
 	"dependencies": {
 		"@babel/parser": "^7.16.6",
 		"@babel/traverse": "^7.16.5",
-		"@babel/types": "^7.16.0",
+		"@babel/types": "^7.16.8",
 		"axios": "^0.24.0",
 		"recast": "^0.20.5"
 	}

@@ -1,4 +1,7 @@
 export * from "./AdverbConfiguration";
+export * from "./AdverbCache";
+export * from "./CodeLensCache";
+export * from "./CodeLensCacheBlock";
 export * from "./FileConfiguration";
 export * from "./Folding";
 export * from "./FoldingConfiguration";

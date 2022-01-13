@@ -24,8 +24,7 @@ export class FoldCommand extends Command {
     if (!lineRange)
       return;
 
-    const start = lineRange[0];
-    const end = lineRange[1];
+    const [start, end] = lineRange;
     if (!summary) {
       let content: string = "";
       for (let i = start; i <= end; i++) {
@@ -43,9 +42,9 @@ export class FoldCommand extends Command {
       }
       await configuration.updateFolding(editor.document.uri, foldingConfiguration);
       await updateEditorFoldingRanges(editor);
-      await commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start], });
+      await commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start] });
       if (foldingConfiguration)
-        window.showInformationMessage(`Folding [${foldingConfiguration.start + 1}-${foldingConfiguration.end + 1} successfully added.`);
+      window.showInformationMessage(`Folding ${foldingConfiguration.start + 1}-${foldingConfiguration.end + 1} successfully added.`);
       refreshFoldings();
     }
   }

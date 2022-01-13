@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
+import { Range } from "vscode";
 
 export class Folding {
-    constructor(public range: vscode.Range, public message: string) { }
+    constructor(public range: Range, public message: string) { }
 };

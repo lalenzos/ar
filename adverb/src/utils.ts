@@ -1,4 +1,5 @@
 import {
+  Disposable,
   FoldingRange,
   FoldingRangeKind,
   languages,
@@ -20,8 +21,9 @@ let foldingTimeout: NodeJS.Timer | undefined = undefined;
 let globalTreeViewProvider: GlobalRenamingTreeViewProvider;
 let localTreeViewProvider: LocalRenamingTreeViewProvider;
 let foldingTreeViewProvider: FoldingTreeViewProvider;
+let foldingRangeProvider: Disposable;
 
-export const initialize = (_globalTreeViewProvider: GlobalRenamingTreeViewProvider, _localTreeViewProvider: LocalRenamingTreeViewProvider, _foldingTreeViewProvider: FoldingTreeViewProvider) => {
+export const initializeTreeViews = (_globalTreeViewProvider: GlobalRenamingTreeViewProvider, _localTreeViewProvider: LocalRenamingTreeViewProvider, _foldingTreeViewProvider: FoldingTreeViewProvider) => {
   globalTreeViewProvider = _globalTreeViewProvider;
   localTreeViewProvider = _localTreeViewProvider;
   foldingTreeViewProvider = _foldingTreeViewProvider;
@@ -66,8 +68,10 @@ export const refreshFoldings = (visibleRanges: Range[] | undefined = undefined) 
 
 export const updateEditorFoldingRanges = async (editor: TextEditor) => {
   const foldings = await configuration.getFoldings(editor.document.uri);
+  if (foldingRangeProvider)
+    foldingRangeProvider.dispose();
   if (foldings) {
-    await languages.registerFoldingRangeProvider(SUPPORTED_LANGUAGES, {
+    foldingRangeProvider = await languages.registerFoldingRangeProvider(SUPPORTED_LANGUAGES, {
       provideFoldingRanges(document: TextDocument): FoldingRange[] {
         const result: FoldingRange[] = [];
         Object.keys(foldings).forEach((f) => {

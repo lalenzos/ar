@@ -17,8 +17,8 @@ ECHO Virtual environment activated...
 
 ECHO ************************************************************************************************************
 ECHO **** PLEASE INSTALL RUST BEFORE CONTINUING AND RESTART THIS PROCEDURE (CLOSE ALSO THIS COMMAND PROMPT). ****
-ECHO ****DOWNLOAD AND INSTALL FROM: https://www.rust-lang.org/tools/install                                  ****
-ECHO  **** SKIP THIS STEP AND CONTINUE, IF ALREADY INSTALLED                                                 ****
+ECHO **** DOWNLOAD AND INSTALL FROM: https://www.rust-lang.org/tools/install                                 ****
+ECHO **** SKIP THIS STEP AND CONTINUE, IF ALREADY INSTALLED                                                  ****
 ECHO ************************************************************************************************************
 start https://www.rust-lang.org/tools/install
 pause
