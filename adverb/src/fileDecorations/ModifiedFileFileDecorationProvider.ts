@@ -8,21 +8,19 @@ export class ModifiedFileFileDecorationProvider implements FileDecorationProvide
 
     constructor() {
         workspace.onDidChangeConfiguration((event) => {
-            if (event.affectsConfiguration("adverb")){
-            const editor = window.activeTextEditor;
-            if (editor)
-                this._onDidChangeFileDecorations.fire(editor.document.uri);
+            if (event.affectsConfiguration("adverb")) {
+                const editor = window.activeTextEditor;
+                if (editor)
+                    this._onDidChangeFileDecorations.fire(editor.document.uri);
             }
         });
     }
 
     async provideFileDecoration(uri: Uri): Promise<FileDecoration | null | undefined> {
+        console.log("update file decoration");
         if (Settings.areFileDecorationsEnabled()) {
             const config = await configuration.getMergedConfigurationForCurrentFile(uri);
-            if (config?.fileRenaming ||
-                (config?.foldings && Object.values(config?.foldings).length > 0) ||
-                (config?.renamings && Object.values(config?.renamings).length > 0)
-            )
+            if (config?.fileRenaming || (config?.renamings && Object.values(config?.renamings).length > 0))
                 return new FileDecoration("🚧");
         }
         return null;

@@ -24,6 +24,7 @@ const _getCodeSummary = async (code: string): Promise<string | undefined> => {
             return response.data["result"];
         })
         .catch((error: any) => {
+            console.error(error);
             window.showErrorMessage("API request for code summary failed.");
             return undefined;
         });

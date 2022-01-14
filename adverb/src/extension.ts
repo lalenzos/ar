@@ -3,8 +3,8 @@ import { Cache } from "./cache";
 import { FoldCommand, RenameAllCommand, RenameSingleCommand } from "./commands";
 import { registerEvents } from "./events";
 import { Settings } from "./settings";
-import { GlobalRenamingTreeViewProvider, LocalRenamingTreeViewProvider, FoldingTreeViewProvider } from "./treeViews";
-import { initializeTreeViews, refreshFoldings, refreshRenamings } from "./utils";
+import { GlobalRenamingTreeViewProvider, LocalRenamingTreeViewProvider } from "./treeViews";
+import { initializeTreeViews, refreshRenamings } from "./utils";
 
 export function activate(context: vscode.ExtensionContext) {
   Settings.readSettings();
@@ -12,8 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   let globalTreeViewProvider = new GlobalRenamingTreeViewProvider();
   let localTreeViewProvider = new LocalRenamingTreeViewProvider();
-  let foldingTreeViewProvider = new FoldingTreeViewProvider();
-  initializeTreeViews(globalTreeViewProvider, localTreeViewProvider, foldingTreeViewProvider)
+  initializeTreeViews(globalTreeViewProvider, localTreeViewProvider)
 
   context.subscriptions.push(new FoldCommand());
   context.subscriptions.push(new RenameAllCommand());
@@ -21,12 +20,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(globalTreeViewProvider);
   context.subscriptions.push(localTreeViewProvider);
-  context.subscriptions.push(foldingTreeViewProvider);
 
   registerEvents(context);
 
   refreshRenamings();
-  refreshFoldings();
 }
 
 export function deactivate() { }

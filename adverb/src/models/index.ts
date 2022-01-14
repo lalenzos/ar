@@ -4,7 +4,7 @@ export * from "./CodeLensCache";
 export * from "./CodeLensCacheBlock";
 export * from "./FileConfiguration";
 export * from "./Folding";
-export * from "./FoldingConfiguration";
+export * from "./FoldingCache";
 export * from "./Renaming";
 export * from "./RenamingConfiguration";
 export * from "./RenamingType";

@@ -1,25 +1,18 @@
-import { commands, DecorationInstanceRenderOptions, DecorationOptions, Location, Position, Range, TextDocument, TextEditor, ThemeColor, Uri, window, workspace } from "vscode";
+import { commands, DecorationOptions, Location, Position, Range, TextDocument, TextEditor, ThemeColor, Uri, window } from "vscode";
 import { parse as babelParse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as recast from "recast";
 import configuration from "./configuration";
-import { Folding, getRenamingTypes, Renaming } from "./models";
-import { SUPPORTED_LANGUAGES } from "./utils";
-import { arrowFunctionExpression, functionExpression, Identifier, identifier, SourceLocation } from "@babel/types";
-import { Settings } from "./settings";
+import { getRenamingTypes, Renaming } from "./models";
+import { createAnnotation, getVisibleRows, SUPPORTED_LANGUAGES } from "./utils";
+import { Identifier, MemberExpression, SourceLocation } from "@babel/types";
 
 const renamingHideDecorationType = window.createTextEditorDecorationType({
     backgroundColor: new ThemeColor("editor.background"),
     color: new ThemeColor("editor.background"),
     letterSpacing: "-100em"
 });
-const foldingHideDecorationType = window.createTextEditorDecorationType({
-    backgroundColor: new ThemeColor("editor.background"),
-    color: new ThemeColor("editor.background"),
-    letterSpacing: "-100em"
-});
 const renamingDecorationType = window.createTextEditorDecorationType({});
-const foldingDecorationType = window.createTextEditorDecorationType({});
 const highlightVisibleDefinitionsDecorationType = window.createTextEditorDecorationType({
     backgroundColor: new ThemeColor("editor.wordHighlightBackground"),
     borderColor: new ThemeColor("editor.wordHighlightBorder"),
@@ -33,15 +26,15 @@ const refreshRenamings = async (editor: TextEditor | undefined, currentlySelecte
     if (editor) {
         const result: Renaming[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-            const renamingTypes = getRenamingTypes();
             const fileConfig = await configuration.getMergedConfigurationForCurrentFile(editor.document.uri)
             if (fileConfig) {
                 const renamings = fileConfig.renamings;
                 if (fileConfig.fileRenaming || renamings) {
-                    const originalNames: string[] = renamings ? Object.keys(renamings) : [];
+                    const nodes: { name: string, range: Range }[] = [];
                     const ast = parse(editor.document.getText());
                     if (!ast)
                         return;
+                    const originalNames: string[] = renamings ? Object.keys(renamings) : [];
                     traverse(ast, {
                         enter(path) {
                             if (path.isIdentifier()) {
@@ -51,58 +44,36 @@ const refreshRenamings = async (editor: TextEditor | undefined, currentlySelecte
                                     if (currentlySelectedPositions && currentlySelectedPositions.find(x => x.line === range.start.line)) {
                                         //skip this "renaming"
                                     } else {
-                                        if (originalNames.includes(path.node.name)) {
-                                            const renaming = renamings![path.node.name]!;
-                                            const renamingType = renamingTypes.find(x => x.id === renaming.renamingTypeId)!;
-                                            result.push(new Renaming(path.node.name, renaming.newName, renamingType, range));
-                                        } else {
-                                            const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming)
-                                            if (renamingType?.getNewNameFunction) {
-                                                renamingType.getNewNameFunction(path.node.name, undefined).then((newName: string | undefined) => {
-                                                    if (newName)
-                                                        result.push(new Renaming(path.node.name, newName, renamingType, range));
-                                                });
-                                            }
-                                        }
+                                        nodes.push({ name: path.node.name, range: range });
                                     }
                                 }
                             }
                         }
                     });
+                    const renamingTypes = getRenamingTypes();
+                    for(const node of nodes) {
+                        if (originalNames.includes(node.name)) {
+                            const renaming = renamings![node.name]!;
+                            const renamingType = renamingTypes.find(x => x.id === renaming.renamingTypeId)!;
+                            result.push(new Renaming(node.name, renaming.newName, renamingType, node.range));
+                        } else {
+                            const renamingType = renamingTypes.find(x => x.id === fileConfig.fileRenaming)
+                            if (renamingType?.getNewNameFunction) {
+                                const newName = await renamingType.getNewNameFunction(node.name, undefined);
+                                if (newName)
+                                    result.push(new Renaming(node.name, newName, renamingType, node.range));
+                            }
+                        }
+                    }
                 }
             }
         }
-
         //Hide original identifiers
         editor.setDecorations(renamingHideDecorationType, result);
 
         //"Rename" original identifier by adding the "new" name as annotation
         const annotations = result.map(i => createAnnotation(i.newName, i.range));
         editor.setDecorations(renamingDecorationType, annotations);
-    }
-};
-
-const refreshFoldings = async (editor: TextEditor | undefined, visibleRanges: Range[] | undefined = undefined) => {
-    if (editor) {
-        const result: Folding[] = [];
-        if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-            const foldings = await configuration.getFoldings(editor.document.uri);
-            if (foldings) {
-                const visibleRows = getVisibleRows(editor, visibleRanges);
-                Object.values(foldings).forEach(f => {
-                    const range = editor.document.lineAt(f.start).range;
-                    if (!visibleRows.has(f.start + 1))
-                        result.push(new Folding(range, `🚩 ${f.message} [${f.start + 1}-${f.end + 1}]`));
-                });
-            }
-        }
-
-        //Hide start line of folding section
-        editor.setDecorations(foldingHideDecorationType, result);
-
-        //Show summary of folding
-        const annotations = result.map(i => createAnnotation(i.message, i.range));
-        editor.setDecorations(foldingDecorationType, annotations);
     }
 };
 
@@ -173,6 +144,10 @@ const getFunctionDeclarations = (document: TextDocument): Range[] => {
             if (path.node.loc)
                 ranges.push(getRangeFromLoc(path.node.loc));
         },
+        ClassMethod: function (path) {
+            if (path.node.loc)
+                ranges.push(getRangeFromLoc(path.node.loc));
+        }
     });
     return ranges;
 };
@@ -198,28 +173,6 @@ const getSymbolPosition = (editor: TextEditor | undefined, name: string): Positi
     return result;
 };
 
-const createAnnotation = (content: string, range: Range, position: "before" | "after" = "before") => {
-    return {
-        range,
-        renderOptions: {
-            [position]: {
-                contentText: content,
-                backgroundColor: Settings.getBackgroundColor(),
-                fontColor: Settings.getFontColor(),
-                fontStyle: Settings.getFontStyle(),
-                fontWeight: Settings.getFontWeight(),
-                textDecoration: `;
-                    font-size: ${Settings.getFontSize()};
-                    margin: ${Settings.getMargin()};
-                    padding: ${Settings.getPadding()};
-                    border-radius: ${Settings.getBorderRadius()};
-                    border: ${Settings.getBorder()};
-                    vertical-align: middle;
-                `,
-            },
-        } as DecorationInstanceRenderOptions,
-    } as DecorationOptions;
-};
 
 const checkIfNameIsACodeSymbol = (editor: TextEditor, name: string): boolean => {
     let result = false;
@@ -252,24 +205,17 @@ const getRangeOfFunctionSymbol = (editor: TextEditor, name: string): Range | und
                 result = getRangeFromLoc(path.node.loc);
                 path.stop();
             }
+            if (path.isClassMethod() && path.node.loc && path.node.key?.type === "Identifier" && path.node.key?.name === name) {
+                result = getRangeFromLoc(path.node.loc);
+                path.stop();
+            }
+            if (path.isAssignmentExpression() && path.node.left.type === "MemberExpression" && (path.node.left as MemberExpression).property?.type === "Identifier" && ((path.node.left as MemberExpression).property as Identifier).name === name && (path.node.right.type === "FunctionExpression" || path.node.right.type === "ArrowFunctionExpression") && path.node.right.loc) {
+                result = getRangeFromLoc(path.node.right.loc);
+                path.stop();
+            }
         }
     });
     return result;
-};
-
-const getVisibleRows = (editor: TextEditor, visibleRanges: readonly Range[] | undefined = undefined): Set<number> => {
-    const visibleRows: Set<number> = new Set<number>();
-    var _visibleRanges = visibleRanges;
-    if (!_visibleRanges)
-        _visibleRanges = editor.visibleRanges;
-    _visibleRanges.forEach(r => {
-        let start = r.start.line;
-        while (start <= r.end.line) {
-            visibleRows.add(start);
-            start += 1;
-        }
-    });
-    return visibleRows;
 };
 
 const getRangeFromLoc = (loc: SourceLocation): Range => {
@@ -323,8 +269,8 @@ const parse = (code: string) => {
             tabWidth: 1
         });
     } catch (error) {
-        // console.log(error);
+        console.error(error);
     }
 };
 
-export default { checkIfNameIsACodeSymbol, getRangeOfFunctionSymbol, getFunctionDeclarations, refreshFoldings, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };
+export default { checkIfNameIsACodeSymbol, getRangeOfFunctionSymbol, getFunctionDeclarations, refreshRenamings, highlightSymbolDefinitions, getSymbolPosition };

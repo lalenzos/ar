@@ -1,5 +1,4 @@
-import { Command } from "vscode";
-import { Range } from "vscode";
+import { Command, Range } from "vscode";
 
 export interface CodeLensCacheBlock {
     range: Range,

@@ -1,6 +1,6 @@
 import { workspace, Uri } from "vscode";
 import { TextDecoder, TextEncoder } from "util";
-import { AdverbConfiguration, RenamingType, RenamingConfiguration, FileConfiguration, FoldingConfiguration } from "./models";
+import { AdverbConfiguration, RenamingType, RenamingConfiguration, FileConfiguration } from "./models";
 import { GlobalConfiguration } from "./models/GlobalConfiguration";
 
 const DIRECTORY = ".vscode";
@@ -44,11 +44,6 @@ const _getKey = (uri: Uri): string => {
     return uri.toString();
 };
 
-
-const _getFoldingKey = (start: number, end: number): string => {
-    return `${start}-${end}`;
-};
-
 const getGlobalConfiguration = async (): Promise<GlobalConfiguration | undefined> => {
     const data = await _readConfiguration();
     if (!data)
@@ -74,7 +69,6 @@ const getMergedConfigurationForCurrentFile = async (uri: Uri): Promise<FileConfi
     const configuration = new FileConfiguration();
     configuration.fileRenaming = fileConfiguration?.fileRenaming ? fileConfiguration.fileRenaming : data.global?.fileRenaming;
     configuration.renamings = (data.global?.renamings && fileConfiguration?.renamings) ? Object.assign({}, data.global?.renamings, fileConfiguration?.renamings) : (data.global?.renamings ? data.global?.renamings : fileConfiguration?.renamings);
-    configuration.foldings = fileConfiguration?.foldings;
     return configuration;
 };
 
@@ -90,20 +84,6 @@ const getRenaming = async (uri: Uri, key: string): Promise<RenamingConfiguration
     if (!config || !config.renamings)
         return undefined;
     return config.renamings[key];
-};
-
-const getFolding = async (uri: Uri, start: number, end:number): Promise<FoldingConfiguration | undefined> => {
-    const config = await getLocalConfiguration(uri);
-    if (!config || !config.foldings)
-        return undefined;
-    return config.foldings[_getFoldingKey(start, end)];
-};
-
-const getFoldings = async (uri: Uri): Promise<{ [key: string]: FoldingConfiguration } | undefined> => {
-    const config = await getLocalConfiguration(uri);
-    if (!config || !config.foldings)
-        return undefined;
-    return config.foldings;
 };
 
 const updateGlobalRenaming = async (key: string, renamingConfiguration: RenamingConfiguration): Promise<boolean> => {
@@ -142,30 +122,6 @@ const updateLocalRenaming = async (uri: Uri, key: string, renamingConfiguration:
         if (!data.files[fileKey].renamings)
             data.files[fileKey].renamings = {};
         data.files[fileKey].renamings![key] = renamingConfiguration;
-        return await _saveConfiguration(settingsUri, data);
-    } catch (err) {
-        console.log(err);
-        return false;
-    }
-};
-
-const updateFolding = async (uri: Uri, foldingConfiguration: FoldingConfiguration): Promise<boolean> => {
-    try {
-        const settingsUri = _getUri();
-        if (!settingsUri)
-            return false;
-        let data: AdverbConfiguration | undefined = await _readConfiguration();
-        const fileKey = _getKey(uri);
-        const foldingKey = _getFoldingKey(foldingConfiguration.start, foldingConfiguration.end);
-        if (!data)
-            data = new AdverbConfiguration();
-        if (!data.files)
-            data.files = {};
-        if (!data.files[fileKey])
-            data.files[fileKey] = new FileConfiguration();
-        if (!data.files[fileKey].foldings)
-            data.files[fileKey].foldings = {};
-        data.files[fileKey].foldings![foldingKey] = foldingConfiguration;
         return await _saveConfiguration(settingsUri, data);
     } catch (err) {
         console.log(err);
@@ -240,27 +196,7 @@ const removeLocalRenaming = async (uri: Uri, renamingConfiguration: RenamingConf
         if (!data?.files || !data.files[fileKey] || !data.files[fileKey].renamings)
             return false;
         delete data.files[fileKey].renamings![renamingConfiguration.originalName];
-        if ((!data.files[fileKey].renamings || Object.keys(data.files[fileKey].renamings!).length === 0) && !data.files[fileKey].fileRenaming && !data.files[fileKey].foldings)
-            delete data.files[fileKey];
-        return await _saveConfiguration(settingsUri, data);
-    } catch (err) {
-        console.log(err);
-        return false;
-    }
-};
-
-const removeFolding = async (uri: Uri, foldingConfiguration: FoldingConfiguration): Promise<boolean> => {
-    try {
-        const settingsUri = _getUri();
-        if (!settingsUri)
-            return false;
-        let data: AdverbConfiguration | undefined = await _readConfiguration();
-        const fileKey = _getKey(uri);
-        const foldingKey = _getFoldingKey(foldingConfiguration.start, foldingConfiguration.end);
-        if (!data?.files || !data.files[fileKey] || !data.files[fileKey].foldings)
-            return false;
-        delete data.files[fileKey].foldings![foldingKey];
-        if ((!data.files[fileKey].foldings || Object.keys(data.files[fileKey].foldings!).length === 0) && !data.files[fileKey].fileRenaming && !data.files[fileKey].renamings)
+        if ((!data.files[fileKey].renamings || Object.keys(data.files[fileKey].renamings!).length === 0) && !data.files[fileKey].fileRenaming)
             delete data.files[fileKey];
         return await _saveConfiguration(settingsUri, data);
     } catch (err) {
@@ -275,14 +211,10 @@ export default {
     getMergedConfigurationForCurrentFile,
     getGlobalRenaming,
     getRenaming,
-    getFolding,
-    getFoldings,
     updateGlobalRenaming,
     updateLocalRenaming,
-    updateFolding,
     updateGlobalFileRenaming,
     updateLocalFileRenaming,
     removeGlobalRenaming,
-    removeLocalRenaming,
-    removeFolding
+    removeLocalRenaming
 };

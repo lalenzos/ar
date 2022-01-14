@@ -1,8 +1,6 @@
 import { commands, TextEditor, window } from "vscode";
 import { getCodeSummary } from "../api";
-import configuration from "../configuration";
-import { FoldingConfiguration } from "../models";
-import { refreshFoldings, updateEditorFoldingRanges } from "../utils";
+import { addFolding } from "../utils";
 import { Command, Commands } from "./command";
 
 export class FoldCommand extends Command {
@@ -33,19 +31,9 @@ export class FoldCommand extends Command {
       summary = await getCodeSummary(content, true);
     }
     if (summary) {
-      const foldingConfiguration = new FoldingConfiguration(start, end, summary);
-      const foldings = await configuration.getFoldings(editor.document.uri);
-      if (foldings) {
-        const equalFoldings = Object.values(foldings).filter((f) => f.start === start);
-        for (const f of equalFoldings)
-          await configuration.removeFolding(editor.document.uri, f);
-      }
-      await configuration.updateFolding(editor.document.uri, foldingConfiguration);
-      await updateEditorFoldingRanges(editor);
+      await addFolding(editor, start, end, summary);
       await commands.executeCommand("editor.fold", { levels: 1, selectionLines: [start] });
-      if (foldingConfiguration)
-      window.showInformationMessage(`Folding ${foldingConfiguration.start + 1}-${foldingConfiguration.end + 1} successfully added.`);
-      refreshFoldings();
+      window.showInformationMessage(`Folding ${start + 1}-${end + 1} successfully added.`);
     }
   }
 

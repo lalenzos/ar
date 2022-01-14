@@ -22,13 +22,11 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
             Cache.cleanCodeLensCacheOfDocument(document.fileName);
             this._onDidChangeCodeLenses.fire();
         });
-
-        Cache.cleanCodeLensCache();
     };
 
     public provideCodeLenses(document: TextDocument): ProviderResult<CodeLens[]> {
         if (Settings.areCodeLensEnabled() && !document.isDirty) {
-            const documentCache = Cache.getCodeLensCacheForDocument(document.fileName);
+            const documentCache = Cache.getCodeLensCacheOfDocument(document.fileName);
             const ranges: Range[] = ast.getFunctionDeclarations(document);
             this.codeLenses = ranges
                 .filter(range => !this.currentlyProcessing.some(x => x.isEqual(range)))
@@ -45,7 +43,7 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
         if (Settings.areCodeLensEnabled()) {
             const editor = window.activeTextEditor;
             if (editor?.document && !codeLens.command) {
-                const cachedSummary = Cache.getCodeLensCacheForDocumentAndCodeBlock(editor.document.fileName, codeLens.range);
+                const cachedSummary = Cache.getCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range);
                 if (cachedSummary) {
                     codeLens.command = cachedSummary.command;
                     return codeLens;
@@ -58,6 +56,7 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
                     for (let i = codeLens.range.start.line; i <= codeLens.range.end.line; i++) {
                         content += editor.document.lineAt(i).text + "\n";
                     }
+                    console.log(`API summary request for line range ${codeLens.range.start.line + 1}-${codeLens.range.end.line + 1}`)
                     return getCodeSummary(content).then((summary) => {
                         if (summary) {
                             codeLens.command = {
