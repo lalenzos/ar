@@ -36,6 +36,7 @@ var Helpers = function (faker) {
    * @param {string} string
    * @param {string} symbol defaults to `"#"`
    */
+
   self.replaceSymbolWithNumber = function (string, symbol) {
     string = string || '';
     // default symbol is '#'

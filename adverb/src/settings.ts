@@ -8,12 +8,8 @@ export class Settings {
   }
 
   // ** BASIC **
-  static isLocalRenamingEnabled(): boolean {
-    return Settings.configuration.get<boolean>("localRenamingEnabled", true);
-  }
-
-  static isGlobalRenamingEnabled(): boolean {
-    return Settings.configuration.get<boolean>("globalRenamingEnabled", true);
+  static isRenamingEnabled(): boolean {
+    return Settings.configuration.get<boolean>("renamingEnabled", true);
   }
 
   static isFoldingEnabled(): boolean {

@@ -15,6 +15,7 @@ import {
 } from "vscode";
 import ast from "./ast";
 import { Cache } from "./cache";
+import { ModifiedFileFileDecorationProvider } from "./fileDecorations";
 import { Settings } from "./settings";
 import { GlobalRenamingTreeViewProvider, LocalRenamingTreeViewProvider } from "./treeViews";
 
@@ -23,6 +24,7 @@ export const SUPPORTED_LANGUAGES = ["javascript", "typescript"];
 let renamingTimeout: NodeJS.Timer | undefined = undefined;
 let globalTreeViewProvider: GlobalRenamingTreeViewProvider;
 let localTreeViewProvider: LocalRenamingTreeViewProvider;
+let fileDecorationProvider: ModifiedFileFileDecorationProvider;
 
 let foldingProvider: Disposable | undefined;
 const foldingHideDecorationType = window.createTextEditorDecorationType({
@@ -32,14 +34,13 @@ const foldingHideDecorationType = window.createTextEditorDecorationType({
 });
 const foldingDecorationType = window.createTextEditorDecorationType({});
 
-export const initializeTreeViews = (_globalTreeViewProvider: GlobalRenamingTreeViewProvider, _localTreeViewProvider: LocalRenamingTreeViewProvider) => {
+export const initialize = (_globalTreeViewProvider: GlobalRenamingTreeViewProvider, _localTreeViewProvider: LocalRenamingTreeViewProvider, _fileDecorationProvider: ModifiedFileFileDecorationProvider) => {
   globalTreeViewProvider = _globalTreeViewProvider;
   localTreeViewProvider = _localTreeViewProvider;
+  fileDecorationProvider = _fileDecorationProvider;
 }
 
 export const refreshRenamings = (positions: Position[] | undefined = undefined) => {
-  if (!Settings.isLocalRenamingEnabled() && !Settings.isGlobalRenamingEnabled())
-    return;
   if (renamingTimeout) {
     clearTimeout(renamingTimeout);
     renamingTimeout = undefined;
@@ -47,13 +48,17 @@ export const refreshRenamings = (positions: Position[] | undefined = undefined) 
   renamingTimeout = setTimeout(() => {
     const editor = window.activeTextEditor;
     if (editor) {
-      console.log("Updating renamings");
       ast.refreshRenamings(editor, positions);
-      if (Settings.isLocalRenamingEnabled() && Settings.areTreeViewsEnabled())
-        localTreeViewProvider.refresh(editor?.document.uri);
+      if (Settings.isRenamingEnabled() && Settings.areTreeViewsEnabled())
+        localTreeViewProvider?.refresh(editor.document.uri);
+      else
+        localTreeViewProvider?.dispose();
+      fileDecorationProvider?.refresh(editor.document.uri);
     }
-    if (Settings.isGlobalRenamingEnabled())
-      globalTreeViewProvider.refresh();
+    if (Settings.isRenamingEnabled() && Settings.areTreeViewsEnabled())
+      globalTreeViewProvider?.refresh();
+    else
+      globalTreeViewProvider?.dispose();
   }, 100);
 };
 
@@ -64,6 +69,12 @@ export const addFolding = async (editor: TextEditor, start: number, end: number,
 };
 
 export const refreshFoldings = async (editor: TextEditor, visibleRanges: readonly Range[]) => {
+  if (!Settings.isFoldingEnabled()) {
+    foldingProvider?.dispose();
+    editor.setDecorations(foldingHideDecorationType, []);
+    editor.setDecorations(foldingDecorationType, []);
+    return;
+  }
   const visibleLines = getVisibleRows(editor, visibleRanges);
   const cachedFoldings = Cache.getFoldingCacheOfDocument(editor.document.fileName)
   const provider: FoldingRangeProvider = {
@@ -78,8 +89,8 @@ export const refreshFoldings = async (editor: TextEditor, visibleRanges: readonl
   editor.setDecorations(foldingDecorationType, foldings?.map(i => createAnnotation(i.message, i.range)) ?? []);
 };
 
-export const clearFoldings = (editor: TextEditor) => {
-  Cache.cleanFoldingCacheOfDocument(editor.document.fileName);
+export const clearFoldings = (editor: TextEditor, startingFromLine: number | undefined = undefined) => {
+  Cache.cleanFoldingCacheOfDocument(editor.document.fileName, startingFromLine);
   refreshFoldings(editor, editor.visibleRanges);
 };
 
@@ -106,6 +117,18 @@ export const createAnnotation = (content: string, range: Range, position: "befor
   } as DecorationOptions;
 };
 
+export const hashCode = (code: string): number => {
+  var hash: number = 0, i, chr;
+  if (!code || code.length === 0)
+    return hash;
+  for (i = 0; i < code.length; i++) {
+    chr = code.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return hash;
+};
+
 export const getCodeForRange = (document: TextDocument, range: Range): string => {
   let content: string = "";
   for (let i = range.start.line; i <= range.end.line; i++) {
@@ -130,13 +153,13 @@ export const getVisibleRows = (editor: TextEditor, visibleRanges: readonly Range
   const visibleRows: Set<number> = new Set<number>();
   var _visibleRanges = visibleRanges;
   if (!_visibleRanges)
-      _visibleRanges = editor.visibleRanges;
+    _visibleRanges = editor.visibleRanges;
   _visibleRanges.forEach(r => {
-      let start = r.start.line;
-      while (start <= r.end.line) {
-          visibleRows.add(start);
-          start += 1;
-      }
+    let start = r.start.line;
+    while (start <= r.end.line) {
+      visibleRows.add(start);
+      start += 1;
+    }
   });
   return visibleRows;
 };

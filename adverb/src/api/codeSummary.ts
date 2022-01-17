@@ -1,8 +1,13 @@
 import axios from "axios";
 import { window, ProgressLocation } from "vscode";
+import { Cache } from "../cache";
 import { Settings } from "../settings";
 
 export const getCodeSummary = async (code: string, showProgress: boolean = false): Promise<string | undefined> => {
+    const summary = Cache.getCachedSummary(code);
+    if (summary)
+        return summary;
+
     return showProgress ?
         window.withProgress({
             location: ProgressLocation.Notification,
@@ -21,7 +26,10 @@ const _getCodeSummary = async (code: string): Promise<string | undefined> => {
             content: code,
         })
         .then((response: any) => {
-            return response.data["result"];
+            const summary = response.data["result"];
+            if (summary)
+                Cache.cacheSummary(code, summary);
+            return summary;
         })
         .catch((error: any) => {
             console.error(error);

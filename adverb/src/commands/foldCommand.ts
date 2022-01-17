@@ -1,6 +1,7 @@
 import { commands, TextEditor, window } from "vscode";
 import { getCodeSummary } from "../api";
-import { addFolding } from "../utils";
+import { Cache } from "../cache";
+import { addFolding, hashCode } from "../utils";
 import { Command, Commands } from "./command";
 
 export class FoldCommand extends Command {
@@ -13,9 +14,9 @@ export class FoldCommand extends Command {
     let initialMax = args && args.length >= 2 ? (args[1] as number) : undefined;
     let summary: string | undefined = args && args.length === 3 ? (args[2] as string) : undefined;
 
-    if(!initialMin && !initialMax && !editor.selection.isSingleLine){
-        initialMin = editor.selection.start.line;
-        initialMax = editor.selection.end.line;
+    if (!initialMin && !initialMax && !editor.selection.isSingleLine) {
+      initialMin = editor.selection.start.line;
+      initialMax = editor.selection.end.line;
     }
 
     const lineRange = await this.askLineRange(editor, initialMin, initialMax);

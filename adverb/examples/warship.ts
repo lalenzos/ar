@@ -12,7 +12,7 @@ class Cell {
     constructor(public row: number, public column: number) {
         this.element = new HTMLElement();
     }
-
+    
     // Parse a cell location of the format "row,column"
     static parseCellLocation(pos: string) {
         var indices: string[] = pos.split(",");

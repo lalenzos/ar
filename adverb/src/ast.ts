@@ -6,6 +6,7 @@ import configuration from "./configuration";
 import { getRenamingTypes, Renaming } from "./models";
 import { createAnnotation, getVisibleRows, SUPPORTED_LANGUAGES } from "./utils";
 import { Identifier, MemberExpression, SourceLocation } from "@babel/types";
+import { Settings } from "./settings";
 
 const renamingHideDecorationType = window.createTextEditorDecorationType({
     backgroundColor: new ThemeColor("editor.background"),
@@ -24,6 +25,11 @@ const highlightNotVisibleDefinitionsDecorationType = window.createTextEditorDeco
 
 const refreshRenamings = async (editor: TextEditor | undefined, currentlySelectedPositions: Position[] | undefined = undefined) => {
     if (editor) {
+        if(!Settings.isRenamingEnabled()){
+            editor.setDecorations(renamingHideDecorationType, []);
+            editor.setDecorations(renamingDecorationType, []);
+            return;
+        }
         const result: Renaming[] = [];
         if (SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
             const fileConfig = await configuration.getMergedConfigurationForCurrentFile(editor.document.uri)

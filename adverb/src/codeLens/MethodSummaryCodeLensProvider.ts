@@ -1,4 +1,4 @@
-import { CancellationToken, CodeLens, CodeLensProvider, Event, EventEmitter, ProviderResult, Range, TextDocument, window, workspace } from "vscode";
+import { CodeLens, CodeLensProvider, Event, EventEmitter, ProviderResult, Range, TextDocument, window, workspace } from "vscode";
 import { getCodeSummary } from "../api";
 import ast from "../ast";
 import { Cache } from "../cache";
@@ -18,8 +18,11 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
                 this._onDidChangeCodeLenses.fire();
         });
 
-        workspace.onDidSaveTextDocument(async (document) => {
-            Cache.cleanCodeLensCacheOfDocument(document.fileName);
+        workspace.onDidChangeTextDocument((event) => {
+            Cache.cleanCodeLensCacheOfDocument(event.document.fileName, Math.min(...event.contentChanges.map(x => x.range.start.line)));
+        });
+
+        workspace.onDidSaveTextDocument(() => {
             this._onDidChangeCodeLenses.fire();
         });
     };

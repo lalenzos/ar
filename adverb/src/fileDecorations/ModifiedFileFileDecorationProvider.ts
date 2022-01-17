@@ -16,8 +16,11 @@ export class ModifiedFileFileDecorationProvider implements FileDecorationProvide
         });
     }
 
+    public refresh(uri: Uri): void {
+        this._onDidChangeFileDecorations.fire(uri);
+    }
+
     async provideFileDecoration(uri: Uri): Promise<FileDecoration | null | undefined> {
-        console.log("update file decoration");
         if (Settings.areFileDecorationsEnabled()) {
             const config = await configuration.getMergedConfigurationForCurrentFile(uri);
             if (config?.fileRenaming || (config?.renamings && Object.values(config?.renamings).length > 0))

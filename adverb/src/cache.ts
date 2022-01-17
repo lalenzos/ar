@@ -1,5 +1,6 @@
 import { Command, ExtensionContext, Range } from "vscode";
 import { AdverbCache, CodeLensCacheBlock, Folding } from "./models";
+import { hashCode } from "./utils";
 
 export class Cache {
     private static CACHE_NAME: string = "ADVERB";
@@ -37,10 +38,13 @@ export class Cache {
         this.context.workspaceState.update(this.CACHE_NAME, cache);
     };
 
-    static cleanFoldingCacheOfDocument(fileName: string): void {
+    static cleanFoldingCacheOfDocument(fileName: string, startingFromLine: number | undefined = undefined): void {
         const cache = this.getCache();
         if (cache?.foldingsCache && cache?.foldingsCache[fileName]) {
-            cache.foldingsCache[fileName] = undefined;
+            if (startingFromLine)
+                cache.foldingsCache[fileName] = cache.foldingsCache[fileName]?.filter(x => x.range.start.line < startingFromLine && x.range.end.line < startingFromLine);
+            else
+                cache.foldingsCache[fileName] = undefined;
             this.context.workspaceState.update(this.CACHE_NAME, cache);
         }
     };
@@ -79,12 +83,31 @@ export class Cache {
         this.context.workspaceState.update(this.CACHE_NAME, cache);
     };
 
-    static cleanCodeLensCacheOfDocument(fileName: string): void {
+    static cleanCodeLensCacheOfDocument(fileName: string, startingFromLine: number | undefined = undefined): void {
         const cache = this.getCache();
         if (cache?.codeLensCache && cache?.codeLensCache[fileName]) {
-            cache.codeLensCache[fileName] = undefined;
+            if (startingFromLine)
+                cache.codeLensCache[fileName] = cache.codeLensCache[fileName]?.filter(x => x.range.start.line < startingFromLine && x.range.end.line < startingFromLine);
+            else
+                cache.codeLensCache[fileName] = undefined;
             this.context.workspaceState.update(this.CACHE_NAME, cache);
         }
     };
 
+    static getCachedSummary(code: string): string | undefined {
+        const hash = hashCode(code);
+        const cache = this.getCache();
+        const cachedSummary = cache?.summariesCache ? cache.summariesCache[hash] : undefined;
+        return cachedSummary;
+    };
+
+    static cacheSummary(code: string, summary: string): void {
+        const hash = hashCode(code);
+        let cache = this.getCache();
+        if (!cache)
+            cache = new AdverbCache();
+        if (!cache.summariesCache)
+            cache.summariesCache = {};
+        cache.summariesCache[hash] = summary;
+    };
 };
