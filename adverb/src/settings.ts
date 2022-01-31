@@ -31,6 +31,10 @@ export class Settings {
 
 
   // ** BACKEND **
+  static getRenamingModelType(): string {
+    return Settings.configuration.get<string>("renamingModel", "Salesforce/codet5-base");
+  }
+
   static getBackendUrl(): string {
     return Settings.configuration.get<string>("backendUrl", "http://127.0.0.1:8080");
   }
