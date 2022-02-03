@@ -6,3 +6,11 @@ MASK: masked identifier prediction
 "<extra_id_0>"
 
 create automatically summaries and show them above (codelens)
+
+
+make renaming flexible UI
+mask model for variables
+add summary as code documentation and/or change the summary
+investigate model performance on CPU
+
+codeBERT - search in natural language for relevant source code pieces
