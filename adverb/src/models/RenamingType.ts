@@ -20,7 +20,7 @@ export const getRenamingTypes = (): RenamingType[] => [
     },
     {
         id: 2,
-        description: "Create name automatically from function body",
+        description: "Create name using code context",
         onlyForSingleRenaming: true,
         onlyForFunctionNames: true,
         getNewNameFunction: async (originalName: string, code: string | undefined) => {
@@ -34,7 +34,7 @@ export const getRenamingTypes = (): RenamingType[] => [
         id: 3,
         description: "Use function summary as new name",
         onlyForSingleRenaming: true,
-        onlyForFunctionNames: true,
+        onlyForFunctionNames: false,
         getNewNameFunction: async (originalName: string, code: string | undefined) => {
             if (!code)
                 return originalName;

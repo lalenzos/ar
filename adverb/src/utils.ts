@@ -179,5 +179,5 @@ export const showScopePick = async (): Promise<boolean | undefined> => {
 };
 
 export const showQuickPick = async (title: string, items: string[]): Promise<string | undefined> => {
-  return await window.showQuickPick(items, { canPickMany: false, title: title, });
+  return await window.showQuickPick(items, { canPickMany: false, title: title });
 };
