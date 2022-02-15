@@ -3,7 +3,7 @@ import ast from "../../ast";
 import { getRenamingTypes, RenamingConfiguration } from "../../models";
 import { GlobalConfiguration } from "../../models/GlobalConfiguration";
 import configuration from "../../configuration";
-import { SUPPORTED_LANGUAGES, showInputDialog, refreshRenamings } from "../../utils";
+import { SUPPORTED_LANGUAGES, refreshRenamings } from "../../utils";
 import { RenamingTreeItem } from "../nodes";
 import { BaseTreeViewProvider } from ".";
 
@@ -39,7 +39,11 @@ export abstract class BaseRenamingTreeViewProvider extends BaseTreeViewProvider<
   }
 
   async _edit(renamingConfiguration: RenamingConfiguration, updateRenaming: () => Promise<boolean>) {
-    const newName = await showInputDialog(renamingConfiguration.originalName);
+    const newName = await window.showInputBox({
+      title: `Enter a new name for '${renamingConfiguration.newName}':`,
+      value: renamingConfiguration.newName,
+      validateInput: (value) => value === renamingConfiguration.newName ? "Please choose a new name." : undefined,
+    });
     if (newName) {
       renamingConfiguration.newName = newName;
       const result = await updateRenaming();

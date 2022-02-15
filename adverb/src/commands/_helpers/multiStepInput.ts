@@ -8,12 +8,16 @@ class InputFlowAction {
 
 type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
 
-interface QuickPickParameters<T extends QuickPickItem> {
+export interface CustomQuickPickItem extends QuickPickItem {
+	id: string | number | boolean;
+}
+
+interface QuickPickParameters<CustomQuickPickItem> {
 	title: string;
 	step: number;
 	totalSteps: number;
-	items: T[];
-	activeItem?: T;
+	items: CustomQuickPickItem[];
+	activeItem?: CustomQuickPickItem;
 	placeholder: string;
 	buttons?: QuickInputButton[];
 	shouldResume: () => Thenable<boolean>;
@@ -68,7 +72,7 @@ export class MultiStepInput {
 		}
 	}
 
-	async showQuickPick<T extends QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItem, placeholder, buttons, shouldResume }: P) {
+	async showQuickPick<T extends CustomQuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItem, placeholder, buttons, shouldResume }: P) {
 		const disposables: Disposable[] = [];
 		try {
 			return await new Promise<T | (P extends { buttons: (infer I)[] } ? I : never)>((resolve, reject) => {

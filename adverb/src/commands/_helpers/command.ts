@@ -1,11 +1,6 @@
 import { commands, Disposable, window } from "vscode";
-import { SUPPORTED_LANGUAGES } from "../utils";
-
-export enum Commands {
-  RenameSingle = "adverb.renameSingle",
-  RenameAll = "adverb.renameAll",
-  Fold = "adverb.fold",
-}
+import { SUPPORTED_LANGUAGES } from "../../utils";
+import { Commands } from ".";
 
 export abstract class Command implements Disposable {
   private readonly _disposable: Disposable;
@@ -22,7 +17,7 @@ export abstract class Command implements Disposable {
     this._disposable.dispose();
   };
 
-  private _execute(...args: any[]){
+  private _execute(...args: any[]) {
     const editor = window.activeTextEditor;
     if (!editor || !SUPPORTED_LANGUAGES.includes(editor.document.languageId))
       return;

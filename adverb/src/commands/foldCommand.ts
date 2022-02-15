@@ -1,8 +1,7 @@
 import { commands, TextEditor, window } from "vscode";
 import { getCodeSummary } from "../api";
-import { Cache } from "../cache";
-import { addFolding, hashCode } from "../utils";
-import { Command, Commands } from "./command";
+import { addFolding } from "../utils";
+import { Command, Commands } from "./_helpers";
 
 export class FoldCommand extends Command {
   constructor() {

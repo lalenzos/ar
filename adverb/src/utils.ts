@@ -1,4 +1,5 @@
 import {
+  commands,
   DecorationInstanceRenderOptions,
   DecorationOptions,
   Disposable,
@@ -6,6 +7,7 @@ import {
   FoldingRangeKind,
   FoldingRangeProvider,
   languages,
+  Location,
   Position,
   Range,
   TextDocument,
@@ -164,20 +166,8 @@ export const getVisibleRows = (editor: TextEditor, visibleRanges: readonly Range
   return visibleRows;
 };
 
-export const showInputDialog = async (originalName: string): Promise<string | undefined> => {
-  return await window.showInputBox({
-    title: `Enter a new name for '${originalName}':`,
-    value: originalName,
-    validateInput: (value) => value === originalName ? "Please choose a new name." : undefined,
-  });
-};
-
-export const showScopePick = async (): Promise<boolean | undefined> => {
-  const result = await showQuickPick("Choose the scope", ["Local (current file)", "Global (whole workspace)"]);
-  if (result === undefined) return undefined;
-  return result === "Local (current file)" ? false : true;
-};
-
-export const showQuickPick = async (title: string, items: string[]): Promise<string | undefined> => {
-  return await window.showQuickPick(items, { canPickMany: false, title: title });
-};
+export const getAllLinesContainingSymbol = async (editor: TextEditor, position: Position) => {
+  const result = await commands.executeCommand("vscode.executeReferenceProvider", editor.document.uri, position);
+  const locations = (result as Location[]).filter(x => x.uri.path === editor.document.uri.path);
+  return locations.map(l => editor.document.lineAt(l.range.start.line).text).join("\n");
+}

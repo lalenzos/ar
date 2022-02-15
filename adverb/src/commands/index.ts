@@ -1,5 +1,4 @@
-export * from "./command";
+export * from "./_helpers/commands";
 export * from "./foldCommand";
-export * from "./multiStepInput";
 export * from "./renameAllCommand";
 export * from "./renameSingleCommand";
