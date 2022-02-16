@@ -15,7 +15,7 @@ export class RenameAllCommand extends Command {
   }
 
   async execute(editor: TextEditor, ...args: any[]) {
-    const renamingTypes = getRenamingTypes().filter((x) => x.onlyForSingleRenaming === false).sort((a, b) => a.id - b.id);;
+    const renamingTypes = getRenamingTypes().filter((x) => x.onlyForSingleRenaming === false);
 
     const title = "Rename all code symbols";
     const state = {} as Partial<State>;

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Cache } from "./cache";
 import { MethodSummaryCodeLensProvider } from "./codeLens";
-import { FoldCommand, RenameAllCommand, RenameSingleCommand } from "./commands";
+import { FoldCommand, FoldOrCommentCommand, RenameAllCommand, RenameSingleCommand } from "./commands";
 import { registerEvents } from "./events";
 import { ModifiedFileFileDecorationProvider } from "./fileDecorations";
 import { Settings } from "./settings";
@@ -29,8 +29,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  if (Settings.areCodeLensEnabled())
+  if (Settings.areCodeLensEnabled()){
     vscode.languages.registerCodeLensProvider(SUPPORTED_LANGUAGES, new MethodSummaryCodeLensProvider());
+    context.subscriptions.push(new FoldOrCommentCommand());
+  }
   if (Settings.areFileDecorationsEnabled())
     vscode.window.registerFileDecorationProvider(fileDecorationProvider);
 

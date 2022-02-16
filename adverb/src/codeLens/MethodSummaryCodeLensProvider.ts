@@ -64,8 +64,8 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
                         if (summary) {
                             codeLens.command = {
                                 title: summary,
-                                tooltip: "Click to fold",
-                                command: Commands.Fold,
+                                tooltip: Settings.isFoldingEnabled() ? "Click to fold or to add summary as comment" : "Click to add summary as comment",
+                                command: Commands.FoldOrComment,
                                 arguments: [codeLens.range.start.line, codeLens.range.end.line, summary]
                             }
                             Cache.updateCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range, codeLens.command);

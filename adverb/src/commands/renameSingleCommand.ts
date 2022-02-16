@@ -34,7 +34,7 @@ export class RenameSingleCommand extends Command {
     }
 
     const isFunction = ast.getRangeOfFunctionSymbol(editor, originalName);
-    const renamingTypes = getRenamingTypes().sort((a, b) => a.id - b.id);
+    const renamingTypes = isFunction ? getRenamingTypes() : getRenamingTypes().filter(x => !x.onlyForFunctionNames);
     const code = isFunction ? getCodeForRange(editor.document, isFunction) : await getAllLinesContainingSymbol(editor, cursorPosition);
 
     const newNames: { [key: number]: string } = {};

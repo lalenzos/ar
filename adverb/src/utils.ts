@@ -170,4 +170,4 @@ export const getAllLinesContainingSymbol = async (editor: TextEditor, position: 
   const result = await commands.executeCommand("vscode.executeReferenceProvider", editor.document.uri, position);
   const locations = (result as Location[]).filter(x => x.uri.path === editor.document.uri.path);
   return locations.map(l => editor.document.lineAt(l.range.start.line).text).join("\n");
-}
+};

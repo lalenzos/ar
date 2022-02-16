@@ -15,7 +15,6 @@ class CodeSummaryController:
             return None
 
         model_name = "Salesforce/codet5-base-multi-sum"
-
         tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
         #################################################
