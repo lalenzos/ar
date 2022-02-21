@@ -70,7 +70,7 @@ export class RenameSingleCommand extends Command {
         step: 2,
         totalSteps: 3,
         placeholder: "Choose a renaming technique",
-        items: renamingTypes.map(x => ({ id: x.id, label: x.description, detail: (newNames[x.id] ?? "") })),
+        items: renamingTypes.map(x => ({ id: x.id, label: x.description, detail: (newNames[x.id] ? `=> ${newNames[x.id]}` : "") })),
         activeItem: state.renamingTechnique,
         shouldResume: shouldResume
       });

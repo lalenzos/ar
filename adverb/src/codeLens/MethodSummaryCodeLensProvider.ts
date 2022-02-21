@@ -18,9 +18,9 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
                 this._onDidChangeCodeLenses.fire();
         });
 
-        workspace.onDidChangeTextDocument((event) => {
-            Cache.cleanCodeLensCacheOfDocument(event.document.fileName, Math.min(...event.contentChanges.map(x => x.range.start.line)));
-        });
+        // workspace.onDidChangeTextDocument((event) => {
+        //     Cache.cleanCodeLensCacheOfDocument(event.document.fileName, Math.min(...event.contentChanges.map(x => x.range.start.line)));
+        // });
 
         workspace.onDidSaveTextDocument(() => {
             this._onDidChangeCodeLenses.fire();
@@ -32,49 +32,43 @@ export class MethodSummaryCodeLensProvider implements CodeLensProvider {
             const documentCache = Cache.getCodeLensCacheOfDocument(document.fileName);
             const ranges: Range[] = ast.getFunctionDeclarations(document);
             this.codeLenses = ranges
-                .filter(range => !this.currentlyProcessing.some(x => x.isEqual(range)))
+                // .filter(range => !this.currentlyProcessing.some(x => x.isEqual(range)))
                 .map(range => {
                     const cachedCodeLens = documentCache?.find(x => x.range === range);
-                    return new CodeLens(range, cachedCodeLens?.command);
+                    return new CodeLens(range, cachedCodeLens?.command); 
                 });
             return this.codeLenses;
         }
-        return [];
-    };
+        return undefined;
+    }
 
     public resolveCodeLens(codeLens: CodeLens) {
-        if (Settings.areCodeLensEnabled()) {
-            const editor = window.activeTextEditor;
-            if (editor?.document && !codeLens.command) {
-                const cachedSummary = Cache.getCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range);
-                if (cachedSummary) {
-                    codeLens.command = cachedSummary.command;
-                    return codeLens;
-                }
-                else {
-                    if (this.currentlyProcessing.some(x => x.isEqual(codeLens.range)))
-                        return codeLens;
-                    this.currentlyProcessing.push(codeLens.range);
-                    let content: string = "";
-                    for (let i = codeLens.range.start.line; i <= codeLens.range.end.line; i++) {
-                        content += editor.document.lineAt(i).text + "\n";
-                    }
-                    console.log(`API summary request for line range ${codeLens.range.start.line + 1}-${codeLens.range.end.line + 1}`)
-                    return getCodeSummary(content).then((summary) => {
-                        if (summary) {
-                            codeLens.command = {
-                                title: summary,
-                                tooltip: Settings.isFoldingEnabled() ? "Click to fold or to add summary as comment" : "Click to add summary as comment",
-                                command: Commands.FoldOrComment,
-                                arguments: [codeLens.range.start.line, codeLens.range.end.line, summary]
-                            }
-                            Cache.updateCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range, codeLens.command);
-                            this.currentlyProcessing = this.currentlyProcessing.filter(x => !x.isEqual(codeLens.range));
-                        }
-                        return codeLens;
-                    });
-                }
+        const editor = window.activeTextEditor;
+        if (editor?.document) {
+            // const cachedSummary = Cache.getCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range);
+            // if (cachedSummary)
+            //     return codeLens;
+            // if (this.currentlyProcessing.some(x => x.isEqual(codeLens.range))) //TODO: remove this
+            //     return Promise.reject<CodeLens>(undefined);
+            // this.currentlyProcessing.push(codeLens.range);
+            let content: string = "";
+            for (let i = codeLens.range.start.line; i <= codeLens.range.end.line; i++) {
+                content += editor.document.lineAt(i).text + "\n";
             }
+            console.log(`API summary request for line range ${codeLens.range.start.line + 1}-${codeLens.range.end.line + 1}`)
+            return getCodeSummary(content).then((summary) => {
+                if (summary) {
+                    codeLens.command = {
+                        title: summary,
+                        tooltip: Settings.isFoldingEnabled() ? "Click to fold or to add summary as comment" : "Click to add summary as comment",
+                        command: Commands.FoldOrComment,
+                        arguments: [codeLens.range.start.line, codeLens.range.end.line, summary]
+                    }
+                    // Cache.updateCodeLensCacheOfDocumentAndCodeBlock(editor.document.fileName, codeLens.range, codeLens.command);
+                    // this.currentlyProcessing = this.currentlyProcessing.filter(x => !x.isEqual(codeLens.range));
+                }
+                return codeLens;
+            });
         }
         return codeLens;
     };

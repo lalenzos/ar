@@ -25,7 +25,7 @@ const highlightNotVisibleDefinitionsDecorationType = window.createTextEditorDeco
 
 const refreshRenamings = async (editor: TextEditor | undefined, currentlySelectedPositions: Position[] | undefined = undefined) => {
     if (editor) {
-        if(!Settings.isRenamingEnabled()){
+        if (!Settings.isRenamingEnabled()) {
             editor.setDecorations(renamingHideDecorationType, []);
             editor.setDecorations(renamingDecorationType, []);
             return;
@@ -57,7 +57,7 @@ const refreshRenamings = async (editor: TextEditor | undefined, currentlySelecte
                         }
                     });
                     const renamingTypes = getRenamingTypes();
-                    for(const node of nodes) {
+                    for (const node of nodes) {
                         if (originalNames.includes(node.name)) {
                             const renaming = renamings![node.name]!;
                             const renamingType = renamingTypes.find(x => x.id === renaming.renamingTypeId)!;
